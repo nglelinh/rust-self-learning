@@ -15,7 +15,6 @@ Bài giảng cụ thể nào? (ví dụ: 01_01_optimization_problems)
 Which specific lesson? (e.g., 01_01_optimization_problems)
 
 **Loại vấn đề / Issue Type**
-- [ ] Lỗi toán học / Mathematical error
 - [ ] Lỗi chính tả / Typo
 - [ ] Giải thích không rõ / Unclear explanation
 - [ ] Thiếu ví dụ / Missing example

@@ -83,21 +83,7 @@ Your content here...
 - Thêm dòng trống giữa các đoạn
 - Sử dụng code blocks với syntax highlighting
 - Đánh số công thức toán học rõ ràng
-
-### LaTeX
-
-- Sử dụng `$$...$$` cho inline math
-- Sử dụng block math cho công thức phức tạp:
-
-```markdown
-$$
-\begin{align}
-f(x) &= x^2 \\
-g(x) &= 2x
-\end{align}
-$$
-```
-
+- 
 ### Code Examples
 
 - Comment rõ ràng
@@ -127,7 +113,6 @@ def example_function(data, param1, param2=0.01):
 ### Pull Request sẽ được review dựa trên:
 
 1. **Chất lượng nội dung / Content Quality**
-   - Chính xác về mặt toán học / Mathematical accuracy
    - Giải thích rõ ràng / Clear explanations
    - Ví dụ phù hợp / Appropriate examples
 
@@ -148,10 +133,8 @@ def example_function(data, param1, param2=0.01):
 ## 🎯 Ưu tiên / Priorities
 
 ### High Priority
-- Sửa lỗi toán học / Fix mathematical errors
 - Sửa lỗi code / Fix code bugs
 - Cải thiện accessibility
-- Thêm tests
 
 ### Medium Priority
 - Thêm ví dụ mới / Add new examples
@@ -184,7 +167,6 @@ open http://127.0.0.1:4000/your-baseurl/
 - [ ] Tất cả pages load được / All pages load correctly
 - [ ] Không có broken links
 - [ ] Images hiển thị đúng / Images display correctly
-- [ ] Math formulas render đúng / Math formulas render correctly
 - [ ] Responsive trên mobile / Responsive on mobile
 - [ ] Chuyển ngôn ngữ hoạt động / Language switching works
 - [ ] Search hoạt động / Search works

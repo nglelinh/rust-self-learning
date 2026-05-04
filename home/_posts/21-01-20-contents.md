@@ -3,64 +3,99 @@ layout: post
 title: contents
 chapter: home
 order: 1
-owner: Your Name
+owner: Nguyen Le Linh
 ---
 
-A comprehensive introduction to [your course subject], covering fundamental concepts, practical applications, and advanced topics.
+A deep-dive course on Rust systems programming — from ownership fundamentals to concurrency, async, and unsafe code — designed for developers who already know at least one language and want to internalize Rust's safety guarantees.
 
 # Course Objectives
 
-- Provide students with a solid foundation in [subject area] to support their learning and professional development.
+- Master Rust's ownership, borrowing, and lifetime system so you can reason about memory correctness without a garbage collector.
 
-- Enable students to understand key concepts and apply them to solve real-world problems.
+- Build fluency with Rust's type system — traits, generics, enums, and pattern matching — and apply them to write expressive, zero-cost abstractions.
 
-- Develop analytical and critical thinking skills through hands-on exercises and projects.
+- Write safe concurrent and asynchronous programs using threads, channels, `Arc<Mutex<T>>`, and `async`/`await` with Tokio.
 
-- Prepare students for advanced study or professional work in [related field].
+- Understand when and how to use `unsafe` Rust responsibly, and how to interoperate with C/C++ via FFI.
+
+- Develop production-quality Rust code: structured error handling, comprehensive testing, benchmarking, and macro authoring.
 
 ## Course Outline
 
-The course is divided into the following chapters:
+### Chapter 1: Foundations
+- Setup, Cargo, and the Rust toolchain
+- Your first Rust program
+- Primitive types and operators
+- Control flow and pattern matching basics
+- Modules, crates, and package layout
 
-### Chapter 0: Introduction
-- Overview of the course
-- Fundamental concepts
-- Course structure and expectations
+### Chapter 2: Ownership and Core Types
+- Ownership fundamentals — move semantics and the stack/heap model
+- Borrowing rules and the borrow checker
+- Slices and string types
+- Structs, methods, and associated functions
+- Enums, `Option<T>`, and `Result<T, E>`
 
-### Chapter 1: [Topic 1]
-- Subtopic 1.1
-- Subtopic 1.2
-- Practical applications
+### Chapter 3: Traits and Robustness
+- Error handling with `?`, `thiserror`, and `anyhow`
+- Advanced error propagation patterns
+- Collections, iterators, and iterator adaptors
+- Traits I — defining and implementing traits
+- Traits II — trait objects and dynamic dispatch
 
-### Chapter 2: [Topic 2]
-- Subtopic 2.1
-- Subtopic 2.2
-- Case studies
+### Chapter 4: Advanced Ownership
+- Lifetimes I — annotating references
+- Lifetimes II — lifetime elision and complex scenarios
+- Designing ownership-friendly APIs
+- Smart pointers — `Box`, `Rc`, `Arc`
+- Interior mutability — `Cell`, `RefCell`, `Mutex`
 
-### Chapter 3: [Topic 3]
-- Advanced concepts
-- Integration with previous topics
-- Real-world examples
+### Chapter 5: Concurrency and Async
+- Concurrency I — threads and `std::sync`
+- Concurrency II — message passing and shared state
+- Async I — `async`/`await` fundamentals
+- Async II — Tokio and async I/O
+- Testing I — unit and integration tests
 
-*Add more chapters as needed for your course*
+### Chapter 6: Systems and Advanced Topics
+- Testing II — property-based and fuzz testing
+- Macros — declarative and procedural
+- Unsafe Rust — raw pointers and invariants
+- FFI and C interoperability
+- Capstone project
+
+### Chapter 7: Desktop App Programming
+- GUI landscape — framework survey, rendering models compared, why GPUI
+- GPUI — App, Window, View, Render; Model entities and subscriptions; element API; async tasks
+- Layout systems — box model, constraint trees, flex layout, spacing and alignment (no CSS)
+- OS concepts — processes vs threads, event loop anatomy, file system, timers
+- Networking fundamentals — TCP, WebSocket, HTTP vs persistent connections, Serde, connection lifecycle
+- App architecture — events → state → render pipeline, Tokio channels, practical checklist
+
+### Chapter 8: Operating Systems Programming
+- Processes and signals — spawning processes, pipes, Unix signal model, safe signal handling
+- Files, file descriptors, and low-level I/O — VFS, `std::fs`, raw `File`, `mmap`
+- Memory management — virtual memory, stack vs heap, custom allocators, arenas
+- Inter-process communication — anonymous pipes, FIFOs, Unix sockets, shared memory
+- System calls, libc, and the nix crate — syscall mechanism, POSIX API, `epoll`, `strace`
+- Rust in the kernel and on bare metal — `#![no_std]`, MMIO, Linux kernel modules, `embedded-hal` *(optional)*
 
 ## Main Textbooks
 
-- [Author Name], [Book Title], [Publisher], [Year].
+- Steve Klabnik and Carol Nichols, *The Rust Programming Language*, No Starch Press, 2023. (Available free at [doc.rust-lang.org/book](https://doc.rust-lang.org/book/))
 
-- [Author Name], [Book Title], [Publisher], [Year].
+- Jon Gjengset, *Rust for Rustaceans*, No Starch Press, 2021.
 
 ## References
 
-- [Author Name], [Book Title], [Publisher], [Year].
+- *The Rustonomicon* — guide to unsafe Rust: [doc.rust-lang.org/nomicon](https://doc.rust-lang.org/nomicon/)
 
-- [Author Name], [Book Title], [Publisher], [Year].
+- *Rust Reference*: [doc.rust-lang.org/reference](https://doc.rust-lang.org/reference/)
 
-- [Author Name], [Book Title], [Publisher], [Year].
+- *Rust API Guidelines*: [rust-lang.github.io/api-guidelines](https://rust-lang.github.io/api-guidelines/)
 
 ## Additional Resources
 
-- Online tutorials and documentation
-- Video lectures (if available)
-- Practice problems and solutions
-- Community forums and discussion groups
+- [Rustlings](https://github.com/rust-lang/rustlings) — small exercises to get used to reading and writing Rust
+- [Exercism Rust track](https://exercism.org/tracks/rust) — practice problems with community mentoring
+- [Tokio documentation](https://tokio.rs/) — async runtime used in Chapter 5

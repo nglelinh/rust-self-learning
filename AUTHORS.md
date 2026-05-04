@@ -39,6 +39,5 @@ Brief description of your contribution (e.g., "Added exercises for Chapter 3", "
 This course template is built using:
 - **Jekyll** - Static site generator
 - **Lanyon Theme** by [Mark Otto](https://github.com/mdo)
-- **MathJax** - Mathematical formula rendering
 
 Special thanks to all open-source contributors who made this template possible.

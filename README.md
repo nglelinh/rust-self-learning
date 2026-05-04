@@ -8,7 +8,6 @@ Template để tạo trang web khóa học với hỗ trợ đa ngôn ngữ (Ti�
 - ✅ Cấu trúc nội dung theo chương (chapters)
 - ✅ Tìm kiếm nội dung
 - ✅ Responsive design
-- ✅ MathJax support cho công thức toán học
 - ✅ Tự động deploy lên GitHub Pages
 - ✅ Custom Jekyll plugins
 - ✅ Exam/Quiz templates
@@ -32,9 +31,9 @@ Chỉnh sửa file `_config.yml`:
 # Setup
 title:               "Tên Khóa Học Của Bạn"
 description:         'Mô tả khóa học'
-url:                 https://your-username.github.io
+url:                 https://nglelinh.github.io
 baseurl:             '/your-repo-name'
-imgurl:              https://your-username.github.io/your-repo-name/img
+imgurl:              https://nglelinh.github.io/your-repo-name/img
 
 # About/contact
 author:
@@ -183,19 +182,6 @@ Chỉnh sửa các file trong `public/js/`:
 - `multilang.js` - Xử lý đa ngôn ngữ
 - `search.js` - Tìm kiếm
 
-## 📝 Viết nội dung với LaTeX
-
-Template hỗ trợ MathJax để hiển thị công thức toán học:
-
-```markdown
-Inline math: $$f(x) = x^2$$
-
-Display math:
-$$
-\min_{x \in \mathbb{R}^n} f(x)
-$$
-```
-
 ## 🔍 Tìm kiếm
 
 Tìm kiếm được tạo tự động từ plugin `search_generator.rb`:
@@ -234,8 +220,7 @@ t:
 Để tạo đề thi hoặc bài tập:
 
 1. Tạo file HTML mới trong thư mục gốc
-2. Sử dụng cấu trúc HTML cơ bản với MathJax
-3. File sẽ tự động được build và deploy
+2. File sẽ tự động được build và deploy
 
 ## 🤝 Đóng góp
 
@@ -255,7 +240,6 @@ Template này sử dụng theme Lanyon và được phát triển cho mục đí
 
 - **Theme**: [Lanyon](https://github.com/poole/lanyon) by Mark Otto
 - **Jekyll**: Static site generator
-- **MathJax**: Mathematical formula rendering
 
 ## 📞 Hỗ trợ
 

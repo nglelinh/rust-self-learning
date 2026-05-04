@@ -19,9 +19,9 @@ Mở file `_config.yml` và thay đổi các thông tin sau:
 # Setup
 title:               "Your Course Title"          # Tên khóa học của bạn
 description:         'Your Course Description'    # Mô tả khóa học
-url:                 https://your-username.github.io
+url:                 https://nglelinh.github.io
 baseurl:             '/your-repo-name'            # Tên repository của bạn
-imgurl:              https://your-username.github.io/your-repo-name/img
+imgurl:              https://nglelinh.github.io/your-repo-name/img
 
 # Language-specific configurations
 t:
@@ -43,10 +43,10 @@ author:
 Mở file `_layouts/default.html` và tìm dòng 24:
 
 ```html
-<a class="github-logo__wrapper" target="_blank" href="https://github.com/your-username/your-repo-name" title="Github">
+<a class="github-logo__wrapper" target="_blank" href="https://github.com/nglelinh/your-repo-name" title="Github">
 ```
 
-Thay `your-username/your-repo-name` bằng username và tên repository thực tế của bạn.
+Thay `nglelinh/your-repo-name` bằng username và tên repository thực tế của bạn.
 
 ### 2.3. Cập nhật Thông tin Tác giả
 
@@ -142,7 +142,6 @@ Trước khi deploy, kiểm tra:
 - [ ] GitHub Pages đã được cấu hình
 - [ ] Tất cả links hoạt động đúng
 - [ ] Images hiển thị đúng
-- [ ] Math formulas render đúng
 - [ ] Language switching hoạt động
 - [ ] Search hoạt động
 
@@ -182,17 +181,6 @@ Chỉnh sửa các file trong `public/js/`:
 2. Đảm bảo image file tồn tại trong `img/chapter_img/`
 3. Kiểm tra `imgurl` trong `_config.yml`
 
-### Math formulas không render
-
-1. Kiểm tra MathJax script trong `_includes/head.html`
-2. Sử dụng `$$...$$` cho inline math
-3. Sử dụng block format cho công thức phức tạp
-
-### Search không hoạt động
-
-1. Kiểm tra `search-index.json` và `search-index-vi.json` được generate
-2. Xem console log trong browser
-3. Đảm bảo Lunr.js được load
 
 ## 📚 Tài liệu Tham khảo
 

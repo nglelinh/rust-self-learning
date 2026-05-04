@@ -1,98 +1,76 @@
 # AGENTS.md
 
-## Project
+## What This Repo Is
 
-Jekyll multilingual course template. Deploys to GitHub Pages via Actions.
+Jekyll course site with custom plugins for multilingual content (`en`/`vi`). Deploys to GitHub Pages via `.github/workflows/jekyll.yml` (not the default Pages Jekyll build).
 
-## Commands
+## Dev Commands
 
 ```bash
-bundle install           # Install Ruby dependencies
-bundle exec jekyll serve # Local dev server at http://127.0.0.1:4000/{baseurl}/
+bundle install
+
+# Uses `_config.yml` for `baseurl`; browse at:
+# http://127.0.0.1:4000/<baseurl>/
+bundle exec jekyll serve
+
+# Fast verification that the site builds
+bundle exec jekyll build
 ```
 
-Docker alternative:
+Docker alternative (uses `jekyll/jekyll:4.2.0` and installs an old Bundler):
+
 ```bash
-docker-compose up        # Runs on port 4000
+docker-compose up
 ```
 
-## Content Structure
+## Content Wiring (High-Signal)
 
-### Lecture posts
+- Chapter landing pages live at `contents/{en,vi}/chapterXX/index.html` and must have front matter: `layout: page`, `lang: en|vi`, `chapter: "XX"`.
+- Lecture posts live at `contents/{en,vi}/chapterXX/_posts/*.md`.
+- Chapter navigation and ordering comes from:
+  - `categories: [chapterXX]` (used by `_layouts/page.html` and `_layouts/post.html` via `site.categories["chapterXX"]`)
+  - `order: <int>` (used to sort and to compute prev/next)
+- Language switching is implemented in `_plugins/multilang.rb`:
+  - First tries URL replacement between `/contents/en/` and `/contents/vi/`
+  - If the target page/post is missing, it falls back to matching posts by the same `chapter` + `order`
+  - Practical rule: keep `chapter` + `order` aligned between `en` and `vi` for corresponding lessons.
 
-All lectures go in `contents/{lang}/chapterXX/_posts/` with filename `YYYY-MM-DD-title.md`.
+Required (repo-assumed) post front matter:
 
-Required front matter:
 ```yaml
 ---
 layout: post
 title: "Lesson Title"
-chapter: 'XX'           # Two-digit chapter number as string
-order: N                # Integer ordering within chapter
-owner: Author Name
-lang: en                # 'en' or 'vi'
+chapter: "XX"          # two-digit string
+order: 3               # integer
+lang: en               # or vi
 categories:
-- chapterXX             # Must match chapter directory name
-lesson_type: required   # 'required' or 'optional'
+  - chapterXX          # must match the chapter dir/name
+lesson_type: required  # or optional (drives badges in layouts)
+owner: "Name"
 ---
 ```
 
-### Adding a new chapter
+## Internal Links + Assets
 
-1. Create `contents/en/chapterXX/_posts/` and `contents/vi/chapterXX/_posts/`
-2. Add posts with matching `chapter`, `order`, and `categories` values
-3. Language switching relies on matching `chapter` + `order` across `en`/`vi`
+- For links to other posts, use `{% multilang_post_url ... %}` (implemented in `_plugins/multilang_post_url.rb`).
+- Images: put in `img/chapter_img/` and reference with `{{ site.imgurl }}/chapter_img/<file>`.
 
-### Home page
+## Deployment Notes
 
-Edit posts in `home/_posts/`:
-- `21-01-20-introduction.md` - Course intro
-- `21-01-20-contents.md` - Course outline
-- `21-02-03-makers.md` - Instructor info
+- GitHub Pages deploy is via Actions: `.github/workflows/jekyll.yml` runs `bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}"`.
+- Pages setting must be `Settings > Pages > Source: GitHub Actions`.
+- If you change `_config.yml`, restart `jekyll serve` (config is read at boot).
 
-## Math and LaTeX
+## Fork/Template Placeholders To Fix
 
-Use `$$...$$` for both inline and display math. MathJax renders formulas.
+- `_layouts/default.html`: hardcoded GitHub repo link (`https://github.com/nglelinh/your-repo-name`).
+- `_layouts/post.html`: Utterances comments `repo="convex-optimization-for-all/convex-optimization-for-all.github.io"`.
 
-```markdown
-Inline: $$f(x) = x^2$$
+## Stale Automation Gotcha
 
-Display block:
-$$
-\nabla f(x) = 0
-$$
-```
+`.github/workflows/closed_issue.yml` references `src/change_issue_title.py` and secret `CONVEX_ADMIN_TOKEN`, but `src/change_issue_title.py` is not present in this repo.
 
-## Custom plugins
+## Repo-Level Writing Rules
 
-Located in `_plugins/`:
-- `multilang.rb` - `{% t key %}` for translations, `{% language_switch %}` for lang toggle
-- `redirect_generator.rb` - Handles redirects
-
-## Configuration
-
-Edit `_config.yml`:
-- `baseurl` / `url` / `imgurl` - Required for proper asset paths
-- `t.en.*` / `t.vi.*` - Translation strings
-- `author` - Course author info
-
-After changing `_config.yml`, restart Jekyll.
-
-## Images
-
-Place in `img/chapter_img/`, reference with:
-```markdown
-![Alt]({{ site.imgurl }}/chapter_img/image.png)
-```
-
-## Deployment
-
-Push to `main` branch. GitHub Actions workflow (`.github/workflows/jekyll.yml`) builds and deploys to Pages.
-
-Settings > Pages must be set to "GitHub Actions" source.
-
-## Existing cursor rules
-
-See `.cursor/rules/` for lecture writing guidelines:
-- `lecture-notes-rule.mdc` - Detailed lecture structure, prose style, 1500-3000 words/lecture
-- `math-formula-rule.mdc` - LaTeX formula conventions, use `$$` not `$`
+`.cursor/rules/*` are marked `alwaysApply` and will strongly steer generated lecture content and math formatting (notably: use `$$ ... $$`, not `$ ... $`).
