@@ -35,7 +35,12 @@ Each chapter builds on the previous, so working through them in order is recomme
 - **Reflective prompts** to deepen your mental model
 - **Exercises** ranging from conceptual reasoning to full implementation tasks
 
-Use the sidebar to navigate chapters and switch between English and Vietnamese content.
+Use the sidebar to navigate chapters. Use the language toggle in the header to switch between English and Vietnamese.
+
+## Language tracks / Lộ trình ngôn ngữ
+
+- **English** — the full course (Chapters 1–8) is available now.
+- **Tiếng Việt** — đang được xây dựng. Chương 1 (Nền tảng và công cụ) đã có bản dịch. Các chương còn lại sẽ được bổ sung dần. Mở **Chương 00** trên lộ trình tiếng Việt để xem trạng thái, hoặc chuyển ngôn ngữ từ một bài Chương 1.
 
 ## Support and Feedback
 

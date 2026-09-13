@@ -8,6 +8,8 @@ owner: Nguyen Le Linh
 
 A deep-dive course on Rust systems programming — from ownership fundamentals to concurrency, async, and unsafe code — designed for developers who already know at least one language and want to internalize Rust's safety guarantees.
 
+The **English** track covers every chapter below. The **Vietnamese** track is in progress: Chapter 1 is available; later chapters are planned. See Chapter 00 on the Vietnamese sidebar for the current status.
+
 # Course Objectives
 
 - Master Rust's ownership, borrowing, and lifetime system so you can reason about memory correctness without a garbage collector.
