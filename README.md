@@ -1,253 +1,92 @@
-# Jekyll Course Template - Multilingual Support
+# Rust Programming: From Foundations to Systems Mastery
 
-Template để tạo trang web khóa học với hỗ trợ đa ngôn ngữ (Tiếng Anh và Tiếng Việt), được xây dựng trên Jekyll và GitHub Pages.
+Khóa tự học Rust trên Jekyll — từ cú pháp và mô hình sở hữu đến concurrency, async, `unsafe`, FFI và lập trình hệ thống. Site hỗ trợ hai ngôn ngữ (`en` / `vi`) và deploy lên GitHub Pages.
 
-## 🎯 Tính năng chính
+**Trang khóa học:** [https://nglelinh.github.io/rust-self-learning/](https://nglelinh.github.io/rust-self-learning/)  
+**Repository:** [https://github.com/nglelinh/rust-self-learning](https://github.com/nglelinh/rust-self-learning)
 
-- ✅ Hỗ trợ đa ngôn ngữ (English/Vietnamese)
-- ✅ Cấu trúc nội dung theo chương (chapters)
-- ✅ Tìm kiếm nội dung
-- ✅ Responsive design
-- ✅ Tự động deploy lên GitHub Pages
-- ✅ Custom Jekyll plugins
-- ✅ Exam/Quiz templates
+## Trạng thái nội dung
 
-## 🚀 Cách sử dụng template này
+| Lộ trình | Trạng thái |
+|----------|------------|
+| **English** | Đầy đủ Chương 1–8 (bài giảng bắt buộc và tùy chọn) |
+| **Tiếng Việt** | Đang xây dựng. Chương 1 (Nền tảng và công cụ) đã có bản dịch. Các chương còn lại sẽ được bổ sung dần. |
 
-> 📖 **Xem hướng dẫn chi tiết trong [SETUP.md](./SETUP.md)**
+Chuyển ngôn ngữ bằng nút trên thanh tiêu đề của từng bài. Plugin đa ngôn ngữ khớp bài tương ứng theo `chapter` + `order`. Nếu bản tiếng Việt chưa có, trang sẽ đưa về landing lộ trình tiếng Việt (Chương 00).
 
-### Bước 1: Tạo repository mới từ template
+## Đối tượng
 
-1. Nhấn nút "Use this template" trên GitHub
-2. Đặt tên cho repository mới của bạn (ví dụ: `machine-learning-course`)
-3. Chọn Public hoặc Private
-4. Nhấn "Create repository from template"
+Khóa học dành cho **người mới ở mức nâng cao đến trung cấp**: đã quen ít nhất một ngôn ngữ (C++, Java, Python, …), biết hàm, vòng lặp và cấu trúc dữ liệu. Không bắt buộc biết pointer; các khái niệm bộ nhớ được giải thích theo cách của Rust.
 
-### Bước 2: Cấu hình cơ bản
+## Nội dung khóa học
 
-Chỉnh sửa file `_config.yml`:
+1. **Foundations** — cài đặt, Cargo, chương trình đầu tiên, kiểu dữ liệu, control flow, module/crate  
+2. **Ownership and Core Types** — ownership, borrowing, slice/string, struct, enum/`Option`/`Result`  
+3. **Traits and Robustness** — xử lý lỗi, collection, iterator, trait  
+4. **Advanced Ownership** — lifetime, API thân thiện với ownership, smart pointer, interior mutability  
+5. **Concurrency and Async** — thread, message passing, `async`/`await`, Tokio, testing  
+6. **Systems and Advanced Topics** — testing nâng cao, macro, `unsafe`, FFI, capstone  
+7. **Desktop App Programming** — GUI, GPUI, layout, OS concepts, networking, kiến trúc ứng dụng  
+8. **Operating Systems Programming** — process, file I/O, bộ nhớ, IPC, syscall/`nix`, kernel/embedded  
 
-```yaml
-# Setup
-title:               "Tên Khóa Học Của Bạn"
-description:         'Mô tả khóa học'
-url:                 https://nglelinh.github.io
-baseurl:             '/your-repo-name'
-imgurl:              https://nglelinh.github.io/your-repo-name/img
+Mỗi bài là tài liệu tự chứa: giải thích khái niệm, ví dụ code tiến dần từ naive đến idiomatic, và bài tập.
 
-# About/contact
-author:
-  name:              Tên Giảng Viên
-  email:             email@example.com
-```
-
-### Bước 3: Cấu hình GitHub Pages
-
-1. Vào **Settings > Pages**
-2. Chọn **Source**: "GitHub Actions"
-3. Workflow sẽ tự động chạy khi bạn push code
-
-### Bước 4: Tùy chỉnh nội dung
-
-#### Trang chủ
-
-Chỉnh sửa các file trong `home/_posts/`:
-- `21-01-20-introduction.md` - Giới thiệu khóa học
-- `21-01-20-contents.md` - Nội dung khóa học
-- `21-02-03-makers.md` - Thông tin giảng viên
-
-#### Nội dung các chương
-
-Tạo nội dung trong `contents/en/` và `contents/vi/`:
-
-```
-contents/
-├── en/
-│   ├── chapter00/
-│   │   └── _posts/
-│   │       └── 21-01-01-00_Introduction.md
-│   ├── chapter01/
-│   │   └── _posts/
-│   │       └── 21-01-07-01_00_Introduction.md
-│   └── ...
-└── vi/
-    ├── chapter00/
-    │   └── _posts/
-    │       └── 21-01-01-00_Gioi_thieu.md
-    └── ...
-```
-
-**Format file bài giảng:**
-
-```markdown
----
-layout: post
-title: Tiêu đề bài giảng
-chapter: '00'
-order: 1
-owner: Tên tác giả
-lang: en  # hoặc vi
-categories:
-- chapter00
----
-
-Nội dung bài giảng ở đây...
-
-Sử dụng LaTeX cho công thức: $$f(x) = x^2$$
-```
-
-## 📁 Cấu trúc thư mục
-
-```
-.
-├── _config.yml              # Cấu hình Jekyll
-├── _includes/               # Các component tái sử dụng
-│   ├── head.html
-│   └── sidebar.html
-├── _layouts/                # Layouts cho pages
-│   ├── default.html
-│   ├── page.html
-│   └── post.html
-├── _plugins/                # Custom Jekyll plugins
-│   ├── multilang.rb         # Hỗ trợ đa ngôn ngữ
-│   ├── multilang_post_url.rb
-│   ├── redirect_generator.rb
-│   └── search_generator.rb
-├── contents/                # Nội dung khóa học
-│   ├── en/                  # Nội dung tiếng Anh
-│   │   ├── chapter00/
-│   │   ├── chapter01/
-│   │   └── ...
-│   └── vi/                  # Nội dung tiếng Việt
-│       ├── chapter00/
-│       ├── chapter01/
-│       └── ...
-├── home/                    # Trang chủ
-│   └── _posts/
-├── img/                     # Hình ảnh
-│   └── chapter_img/
-├── public/                  # CSS, JS, assets
-│   ├── css/
-│   ├── js/
-│   └── logo.png
-├── Gemfile                  # Ruby dependencies
-├── index.html               # Trang chủ
-└── README.md                # Hướng dẫn dự án
-```
-
-## 🛠️ Development
-
-### Cài đặt môi trường
+## Chạy local
 
 ```bash
-# Cài đặt Ruby dependencies
 bundle install
 
-# Chạy Jekyll local server
+# Dùng `baseurl` trong `_config.yml`; mở:
+# http://127.0.0.1:4000/rust-self-learning/
 bundle exec jekyll serve
 
-# Truy cập tại
-http://127.0.0.1:4000/your-baseurl/
+# Chỉ build để kiểm tra
+bundle exec jekyll build
 ```
 
-### Thêm chương mới
+Cách khác bằng Docker (`jekyll/jekyll:4.2.0`):
 
-1. Tạo thư mục mới trong `contents/en/chapterXX/` và `contents/vi/chapterXX/`
-2. Tạo thư mục `_posts/` bên trong
-3. Thêm file markdown với format: `YYYY-MM-DD-title.md`
-4. Đảm bảo front matter có đầy đủ thông tin
-
-### Thêm hình ảnh
-
-1. Đặt hình ảnh vào `img/chapter_img/`
-2. Tham chiếu trong markdown:
-
-```markdown
-![Alt text]({{ site.imgurl }}/chapter_img/your-image.png)
+```bash
+docker-compose up
 ```
 
-## 🎨 Tùy chỉnh giao diện
+Sau khi sửa `_config.yml`, khởi động lại `jekyll serve` — config chỉ được đọc lúc boot.
 
-### CSS
+## Cấu trúc nội dung
 
-Chỉnh sửa các file trong `public/css/`:
-- `lanyon.css` - Layout chính
-- `poole.css` - Base styles
-- `syntax.css` - Code highlighting
+- Trang chương: `contents/{en,vi}/chapterXX/index.html`  
+  Front matter bắt buộc: `layout: page`, `lang: en|vi`, `chapter: "XX"`.
+- Bài giảng: `contents/{en,vi}/chapterXX/_posts/*.md`
+- Thứ tự điều hướng lấy từ `categories: [chapterXX]` và `order: <int>`
+- Giữ `chapter` + `order` giống nhau giữa `en` và `vi` cho cùng một bài
+- Link nội bộ dùng `{% multilang_post_url ... %}`
+- Ảnh đặt trong `img/chapter_img/` và tham chiếu `{{ site.imgurl }}/chapter_img/<file>`
+- Công thức dùng `$$ ... $$` (không dùng `$ ... $`)
 
-### JavaScript
-
-Chỉnh sửa các file trong `public/js/`:
-- `script.js` - Chức năng chung
-- `multilang.js` - Xử lý đa ngôn ngữ
-- `search.js` - Tìm kiếm
-
-## 🔍 Tìm kiếm
-
-Tìm kiếm được tạo tự động từ plugin `search_generator.rb`:
-- `search-index.json` - Index tiếng Anh
-- `search-index-vi.json` - Index tiếng Việt
-
-## 🌐 Đa ngôn ngữ
-
-### Sử dụng translation tags
-
-Trong template:
-
-```liquid
-{% t home %}           <!-- Hiển thị "Home" hoặc "Trang chủ" -->
-{% language_switch %}  <!-- Nút chuyển ngôn ngữ -->
-```
-
-### Cấu hình translations
-
-Trong `_config.yml`:
+Front matter bài giảng:
 
 ```yaml
-t:
-  en:
-    title: "Course Title"
-    home: "Home"
-    chapters: "Chapters"
-  vi:
-    title: "Tiêu đề Khóa học"
-    home: "Trang chủ"
-    chapters: "Các chương"
+---
+layout: post
+title: "Lesson Title"
+chapter: "01"
+order: 3
+lang: en
+categories:
+  - chapter01
+lesson_type: required
+owner: "Author Name"
+---
 ```
 
-## 📚 Tạo đề thi
+## Deploy
 
-Để tạo đề thi hoặc bài tập:
+GitHub Actions (`.github/workflows/jekyll.yml`) chạy `bundle exec jekyll build`. Trong repo, **Settings > Pages > Source** phải là **GitHub Actions**.
 
-1. Tạo file HTML mới trong thư mục gốc
-2. File sẽ tự động được build và deploy
+## Đóng góp
 
-## 🤝 Đóng góp
+Bản tiếng Anh đã đủ để học. Bản tiếng Việt cần dịch tiếp từ Chương 2 trở đi, giữ nguyên `chapter` + `order` so với bài tiếng Anh tương ứng. Xem thêm [AGENTS.md](./AGENTS.md) về convention của repo.
 
-Để đóng góp vào khóa học:
+## License và credit
 
-1. Fork repository
-2. Tạo branch mới: `git checkout -b feature/new-chapter`
-3. Commit changes: `git commit -am 'Add new chapter'`
-4. Push to branch: `git push origin feature/new-chapter`
-5. Tạo Pull Request
-
-## 📄 License
-
-Template này sử dụng theme Lanyon và được phát triển cho mục đích giáo dục.
-
-## 🙏 Credits
-
-- **Theme**: [Lanyon](https://github.com/poole/lanyon) by Mark Otto
-- **Jekyll**: Static site generator
-
-## 📞 Hỗ trợ
-
-Nếu có vấn đề, vui lòng:
-1. Kiểm tra [Issues](../../issues)
-2. Tạo issue mới nếu chưa có
-3. Liên hệ qua email trong `_config.yml`
-
----
-
-**Happy Teaching! 🎓**
+Site dùng theme [Lanyon](https://github.com/poole/lanyon) (Mark Otto) trên Jekyll, phục vụ mục đích giáo dục.
