@@ -30,6 +30,7 @@ The **English** track covers every chapter below. The **Vietnamese** track is in
 - Primitive types and operators
 - Control flow and pattern matching basics
 - Modules, crates, and package layout
+- Modern applications — sparse crates.io, rust-analyzer, WASI 0.2, Edition 2024 *(optional; EN+VI)*
 
 ### Chapter 2: Ownership and Core Types
 - Ownership fundamentals — move semantics and the stack/heap model
@@ -37,6 +38,7 @@ The **English** track covers every chapter below. The **Vietnamese** track is in
 - Slices and string types
 - Structs, methods, and associated functions
 - Enums, `Option<T>`, and `Result<T, E>`
+- Modern applications — Binder, Linux 6.1+ Rust, CISA memory-safe roadmaps *(optional)*
 
 ### Chapter 3: Traits and Robustness
 - Error handling with `?`, `thiserror`, and `anyhow`
@@ -44,6 +46,7 @@ The **English** track covers every chapter below. The **Vietnamese** track is in
 - Collections, iterators, and iterator adaptors
 - Traits I — defining and implementing traits
 - Traits II — trait objects and dynamic dispatch
+- Modern applications — RFC 3185 async traits, hashbrown, anyhow/thiserror at scale *(optional)*
 
 ### Chapter 4: Advanced Ownership
 - Lifetimes I — annotating references
@@ -51,6 +54,7 @@ The **English** track covers every chapter below. The **Vietnamese** track is in
 - Designing ownership-friendly APIs
 - Smart pointers — `Box`, `Rc`, `Arc`
 - Interior mutability — `Cell`, `RefCell`, `Mutex`
+- Modern applications — Tokio `Arc`, rustc arenas, Wasmtime stores, GATs *(optional)*
 
 ### Chapter 5: Concurrency and Async
 - Concurrency I — threads and `std::sync`
@@ -58,6 +62,7 @@ The **English** track covers every chapter below. The **Vietnamese** track is in
 - Async I — `async`/`await` fundamentals
 - Async II — Tokio and async I/O
 - Testing I — unit and integration tests
+- Modern applications — Pingora, Tokio/`hyper`/`axum`, tokio-console *(optional)*
 
 ### Chapter 6: Systems and Advanced Topics
 - Testing II — property-based and fuzz testing
@@ -65,6 +70,7 @@ The **English** track covers every chapter below. The **Vietnamese** track is in
 - Unsafe Rust — raw pointers and invariants
 - FFI and C interoperability
 - Capstone project
+- Modern applications — Cranelift/Wasmtime, PyO3/`cxx`, Miri, cargo-fuzz *(optional)*
 
 ### Chapter 7: Desktop App Programming
 - GUI landscape — framework survey, rendering models compared, why GPUI
@@ -73,6 +79,7 @@ The **English** track covers every chapter below. The **Vietnamese** track is in
 - OS concepts — processes vs threads, event loop anatomy, file system, timers
 - Networking fundamentals — TCP, WebSocket, HTTP vs persistent connections, Serde, connection lifecycle
 - App architecture — events → state → render pipeline, Tokio channels, practical checklist
+- Modern applications — Zed/GPUI 2, Tauri 2.0, COSMIC/iced *(optional)*
 
 ### Chapter 8: Operating Systems Programming
 - Processes and signals — spawning processes, pipes, Unix signal model, safe signal handling
@@ -81,6 +88,7 @@ The **English** track covers every chapter below. The **Vietnamese** track is in
 - Inter-process communication — anonymous pipes, FIFOs, Unix sockets, shared memory
 - System calls, libc, and the nix crate — syscall mechanism, POSIX API, `epoll`, `strace`
 - Rust in the kernel and on bare metal — `#![no_std]`, MMIO, Linux kernel modules, `embedded-hal` *(optional)*
+- Modern applications — Embassy, Ferrocene, Rust Binder, WASI 0.2 *(optional)*
 
 ## Main Textbooks
 
