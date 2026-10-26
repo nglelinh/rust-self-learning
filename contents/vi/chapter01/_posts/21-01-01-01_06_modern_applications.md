@@ -245,3 +245,9 @@ Hãy nghĩ: nếu bạn thiết kế cache artifact đã biên dịch (`sccache`
 - rust-analyzer là compiler thứ hai với ngân sách độ trễ; hãy coi nó là hạ tầng.
 - WASM/WASI 0.2 là target triple và ABI, không phải ngôn ngữ mới.
 - Edition 2024 là di cư phối hợp, ghi trong `Cargo.toml` và CI, không ghi trên slide.
+
+## Video tham khảo
+
+- [The state of WASI support in Rust and WebAssembly toolchain - Michael Yuan](https://www.youtube.com/watch?v=hGcqJ2zrwIY) — RustLab Conference, tiếng Anh. Xem trước: WASI như một target của Cargo — đúng bước toolchain trong bài.
+- [Lin Clark — WebAssembly: Building a new kind of ecosystem](https://www.youtube.com/watch?v=IBZFJzGnBoU) — WebAssembly Summit, tiếng Anh. Lin Clark nói về WebAssembly như một ranh giới hệ sinh thái, không chỉ demo trên trình duyệt.
+- [The Truth about Rust/WebAssembly Performance](https://www.youtube.com/watch?v=4KtotxNAwME) — Greg Johnston, tiếng Anh. Chỗ Rust biên dịch sang WASM nhanh thật và chỗ không, để phần hiệu năng khỏi bị nói quá.

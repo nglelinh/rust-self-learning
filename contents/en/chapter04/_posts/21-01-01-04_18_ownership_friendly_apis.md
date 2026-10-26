@@ -434,3 +434,8 @@ fn normalize(s: &str) -> String { ... }
 - Own outputs when you create data; borrow when you return a view.
 - Clone at storage boundaries, not at every call site.
 - `AsRef` and `Cow` are tools for specific ergonomics/performance needs, not defaults.
+
+## Video tham khảo
+
+- [Easy Rust 073: Traits part 10 - AsRef](https://www.youtube.com/watch?v=iKFljZP6JD0) — mithradates, English. **xem trước.** Watch first: AsRef as the flexible-input tool the lesson says to use sparingly.
+- [Easy Rust 111: Cow part 1](https://www.youtube.com/watch?v=vO0KJRXDFKk) — mithradates, English. Cow as the hybrid return: borrow when you can, own when you must.

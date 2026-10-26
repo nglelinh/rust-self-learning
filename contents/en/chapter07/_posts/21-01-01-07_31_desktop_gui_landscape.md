@@ -197,3 +197,9 @@ A GPU-rendered window should open. This is the foundation for lesson 32.
 - Retained-mode (iced): widget tree diffed by the framework — efficient, more plumbing.
 - Hybrid GPU (GPUI): immediate-mode authoring, GPU-diffed rendering, explicit entity state — highest performance, steepest curve.
 - This course uses GPUI exclusively from lesson 32 onward.
+
+## Video tham khảo
+
+- [Sponsor Lightning Talk (Zed) - Mikayla Maki: “Why Aren't We GUI Yet?”](https://www.youtube.com/watch?v=rpEU9DNbXA4) — Rust Foundation, English. **xem trước.** Watch first: a short Rust Foundation talk on why Rust GUI toolkits lagged, and why Zed cared.
+- [Building a simple text editor with iced, a cross-platform GUI library for Rust](https://www.youtube.com/watch?v=gcBJ7cPSALo) — iced-rs, English. iced’s own walkthrough of an Elm-style desktop UI, one cell in this lesson’s matrix.
+- [Simple GUI application with Slint and Rust](https://www.youtube.com/watch?v=WBcv4V-whHk) — Slint, English. Slint’s official Rust GUI intro, the declarative option next to iced and GPUI.

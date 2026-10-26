@@ -213,3 +213,8 @@ Mention: when cases grow, prefer `match` for clarity and exhaustiveness.
 - `Option` expresses absence; `Result` expresses failure.
 - `match` forces completeness.
 - Typed errors make code easier to test and maintain.
+
+## Video tham khảo
+
+- [Enums and Pattern Matching in Rust](https://www.youtube.com/watch?v=DSZqIJhkNCM) — Let's Get Rusty, English. **xem trước.** Watch first: enums, Option, Result, and match as one idea.
+- [Rust Option Enum Type Overview](https://www.youtube.com/watch?v=z8k_EViGC10) — Trevor Sullivan, English. Option on its own: Some, None, and the methods you will use instead of null.

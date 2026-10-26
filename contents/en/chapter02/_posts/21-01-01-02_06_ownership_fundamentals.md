@@ -179,3 +179,8 @@ The most common error is E0382 (use of moved value). Teach a stable process:
 - Copy types are the exception, not the rule.
 - RAII means resources are released at scope end.
 - Borrowing is the default strategy for read-only access.
+
+## Video tham khảo
+
+- [Understanding Ownership in Rust](https://www.youtube.com/watch?v=VFIOSWy93H0) — Let's Get Rusty, English. **xem trước.** Watch first: move, copy, and scope — the three rules the lesson asks you to learn verbatim.
+- [Rust and RAII Memory Management - Computerphile](https://www.youtube.com/watch?v=pTMvh6VzDls) — Computerphile, English. RAII and Drop from a systems angle: who frees the resource when the owner goes out of scope.

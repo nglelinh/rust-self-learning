@@ -708,3 +708,9 @@ GPUI provides `cx.window_bounds()` and similar APIs to inspect runtime values. T
 - There is no CSS grid — achieve multi-column layouts with nested flex containers or computed column widths.
 - `min_w_0()` / `min_h_0()` are the most common fixes for "why won't this shrink?" bugs.
 - Responsive behavior is a Rust `if` expression inside `render`, not a media query.
+
+## Video tham khảo
+
+- [Learn flexbox the easy way](https://www.youtube.com/watch?v=u044iM9xsWU) — Kevin Powell, English. **xem trước.** Watch first: flexbox in CSS, the model this lesson reimplements without a stylesheet. The video is CSS, not Rust.
+- [Flexbox design patterns you can use in your projects](https://www.youtube.com/watch?v=vQAvjof1oe4) — Kevin Powell, English. Flex patterns for rows, stacks, and alignment — the same decisions as the lesson’s layout trees.
+- [Your First GPUI App - Building a Desktop UI in Rust](https://www.youtube.com/watch?v=NT2XPvtof-Y) — Sahil, English. A GPUI app where those boxes are Rust calls instead of CSS.

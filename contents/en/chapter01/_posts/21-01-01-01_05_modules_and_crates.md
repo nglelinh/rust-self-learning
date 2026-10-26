@@ -266,3 +266,8 @@ Everything else should live in modules with tests.
 - Use `pub` deliberately to shape your API.
 - Put real logic in the library; keep `main` thin.
 - This structure is the foundation for maintainable Rust projects.
+
+## Video tham khảo
+
+- [Rust Modules - Explained Like I'm 5](https://www.youtube.com/watch?v=969j0qnJGi8) — Let's Get Rusty, English. **xem trước.** Watch first for a short picture of mod, crates, and why files are not automatically modules.
+- [Rust's Module System Explained!](https://www.youtube.com/watch?v=5RPXgDQrjio) — Let's Get Rusty, English. The fuller module, pub, and use story for the lib-plus-bin refactor later in the lesson.

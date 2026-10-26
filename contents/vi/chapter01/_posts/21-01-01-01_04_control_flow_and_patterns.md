@@ -293,3 +293,9 @@ Ghi chú giảng viên: `use std::io::{self, Read};` không cần cho `read_line
 - `match` + enum làm trạng thái tường minh.
 - `loop` + giá trị `break` rất hợp luồng tương tác.
 - Tách parse khỏi thực thi để dễ bảo trì.
+
+## Video tham khảo
+
+- [LẬP TRÌNH #RUST Part 4: Cách sử dụng #Enum, Option Enum & Match](https://www.youtube.com/watch?v=daOoyk9d43I) — Jayden Dang, tiếng Việt. Xem trước: match, Option, và enum bằng tiếng Việt — phần match là trọng tâm của bài.
+- [Intro to Rust Control Flow Statements & Conditional Expressions 🦀](https://www.youtube.com/watch?v=3XpxkJXggHA) — Trevor Sullivan, tiếng Anh. if như biểu thức và vòng lặp, đúng phần luồng điều khiển trước match.
+- [Mastering Rust's Match Control Flow - Full Crash Rust Tutorial for Beginners](https://www.youtube.com/watch?v=sd1M_CLXl4I) — Francesco Ciulla, tiếng Anh. match và pattern chi tiết hơn, dùng cho mini-lab REPL có kiểu.

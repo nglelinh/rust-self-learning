@@ -191,3 +191,9 @@ Reflect: how would you design a shared page cache (08-40) for a Binder-like driv
 - This lesson does not replace 08-43; it cites the products that use those mechanisms.
 - Async on bare metal and qualification of the compiler are now industry paths, not blog dreams.
 - You can be the kernel (Wasmtime) or live without one (Embassy); Chapter 8 vocabulary still applies.
+
+## Video tham khảo
+
+- [Rust for Linux with Alice Ryhl and Greg Kroah-Hartman](https://www.youtube.com/watch?v=HM-JM4DoYD4) — corrode, English. **xem trước.** Watch first: Rust Binder as a shipped IPC driver, the kernel story this lesson opens with.
+- [Intro to Embedded Rust Part 12: Async Programming with Embassy | DigiKey](https://www.youtube.com/watch?v=m9FT1qSm-KM) — DigiKey, English. Embassy as async instead of an RTOS, the bare-metal half of the same survey.
+- [Pietro Albini - How Ferrocene qualified the Rust Compiler](https://www.youtube.com/watch?v=_ITnWoPvMKA) — Rust Nation UK, English. Pietro Albini on qualifying Ferrocene, the certified-compiler section.

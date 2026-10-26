@@ -264,3 +264,9 @@ cargo check
 - `cargo` là cửa vào hàng ngày.
 - Dùng vòng: format, lint, test.
 - Học cách tự gỡ tắc bằng `--help` và `rustc --explain`.
+
+## Video tham khảo
+
+- [\[Rust Cơ Bản\] Bài 1: Cài Đặt Ngôn Ngữ Lập Trình Rust  – Khóa Học Lập Trình Rust Cho Người Mới](https://www.youtube.com/watch?v=zEcr5XlOgxE) — Vie Lang, tiếng Việt. Xem trước: cài Rust bằng tiếng Việt, đúng phần rustup và chương trình đầu tiên của bài.
+- [Hướng Dẫn Cài Đặt Môi trường làm việc Cho #RUST](https://www.youtube.com/watch?v=XiS7MB23NoE) — Jayden Dang, tiếng Việt. Dựng môi trường làm việc cho Rust, bổ sung cho bước kiểm tra toolchain.
+- [Rust Installation, Hello World, Hello Cargo -  Full Crash Rust Tutorial for Beginners](https://www.youtube.com/watch?v=R33h77nrMqc) — Francesco Ciulla, tiếng Anh. rustup, Cargo, và vòng sửa-chạy mà bài gọi là công việc hàng ngày.

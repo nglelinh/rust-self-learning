@@ -216,3 +216,9 @@ fn top_k_is_deterministic() {
 - Iteration mode determines ownership.
 - Use `entry` for updates.
 - Sort for deterministic results and testability.
+
+## Video tham khảo
+
+- [Iterators in Rust](https://www.youtube.com/watch?v=4GcKrj4By8k) — Let's Get Rusty, English. **xem trước.** Watch first: iterators, adaptors, and consumers — the iteration-mode section.
+- [Rust Collections Explained](https://www.youtube.com/watch?v=oiWATcjyUEI) — Code to the Moon, English. Vec, HashMap, and the other collections the word-frequency lab chooses among.
+- [Crust of Rust: Iterators](https://www.youtube.com/watch?v=yozQ9C69pNs) — Jon Gjengset, English. A long Crust of Rust session on how iterators are implemented, after the primer.

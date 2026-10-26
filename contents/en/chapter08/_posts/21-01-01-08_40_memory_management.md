@@ -272,3 +272,9 @@ Prefer heap allocation (`Vec`, `Box`) over large stack arrays for anything beyon
 - `Box<T>` is one heap allocation; `Vec<T>` is a growable heap buffer.
 - The global allocator is swappable via `#[global_allocator]`; jemalloc and mimalloc reduce fragmentation in multi-threaded workloads.
 - Arenas are the fastest allocator for same-lifetime objects — amortize the allocation cost and free everything at once.
+
+## Video tham khảo
+
+- [How Computer Memory Works - Computerphile](https://www.youtube.com/watch?v=XETZoRYdtkw) — Computerphile, English. **xem trước.** Watch first: virtual memory, the page model this lesson starts from.
+- [GlobalAllocator | Write Your Own Allocator in Rust and Learn How Heap Memory Works](https://www.youtube.com/watch?v=iqQq4sGBDOk) — Semicolon, English. A GlobalAlloc in Rust, matching the custom-allocator section.
+- [Rust's Global Allocator](https://www.youtube.com/watch?v=TlkDwWGVZKg) — BehindBlueScreen, English. A longer look at Rust’s global allocator and what it is allowed to assume.

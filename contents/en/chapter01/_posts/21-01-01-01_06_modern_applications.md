@@ -245,3 +245,9 @@ Reflect: if you were designing a shared cache of compiled artifacts (`sccache`, 
 - rust-analyzer is a second compiler with a latency budget; treat it as infrastructure.
 - WASM/WASI 0.2 is a target triple and an ABI, not a new language.
 - Edition 2024 is a coordinated migration, recorded in `Cargo.toml` and CI, not in slides.
+
+## Video tham khảo
+
+- [The state of WASI support in Rust and WebAssembly toolchain - Michael Yuan](https://www.youtube.com/watch?v=hGcqJ2zrwIY) — RustLab Conference, English. **xem trước.** Watch first: WASI as a Cargo target, which is the production toolchain move this lesson describes.
+- [Lin Clark — WebAssembly: Building a new kind of ecosystem](https://www.youtube.com/watch?v=IBZFJzGnBoU) — WebAssembly Summit, English. Lin Clark on why WebAssembly is an ecosystem boundary, not only a browser demo.
+- [The Truth about Rust/WebAssembly Performance](https://www.youtube.com/watch?v=4KtotxNAwME) — Greg Johnston, English. Where Rust-to-WASM speed does and does not show up, so the production claims stay honest.

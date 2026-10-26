@@ -251,3 +251,9 @@ Embassy implements cooperative multitasking with zero-cost async state machines 
 - Linux kernel modules in Rust use `kernel::prelude::*`; no unwinding panics; all allocations are fallible.
 - `embedded-hal` traits decouple drivers from hardware — write once, run on any supported chip.
 - Embassy brings `async`/`await` cooperative scheduling to bare-metal without an RTOS.
+
+## Video tham khảo
+
+- [Blinking an LED: Embedded Rust ecosystem explored](https://www.youtube.com/watch?v=A9wvA_S6m7Y) — The Rusty Bits, English. **xem trước.** Watch first: no_std, HAL, and a blink — the embedded-hal half of the lesson.
+- [Intro to Embedded Rust Part 12: Async Programming with Embassy | DigiKey](https://www.youtube.com/watch?v=m9FT1qSm-KM) — DigiKey, English. Embassy’s async executor on bare metal, the RTOS section.
+- [Rust for Linux by Miguel Ojeda and Wedson Almeida Filho - Rust Linz, March 2022](https://www.youtube.com/watch?v=fVEeqo40IyQ) — Rust Programming Language, English. Miguel Ojeda and Wedson Almeida Filho on Rust for Linux, the kernel-module half.

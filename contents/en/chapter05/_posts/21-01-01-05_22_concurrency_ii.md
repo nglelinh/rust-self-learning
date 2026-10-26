@@ -378,3 +378,9 @@ Backpressure (bounded channel) prevents memory exhaustion if disk is slow.
 - Stdlib `mpsc` is multi-producer, single-consumer; use `Arc<Mutex<Receiver>>` for multiple consumers.
 - Worker pools need explicit shutdown semantics (Stop messages or channel close).
 - Never hold the receiver lock while doing work — receive fast, process outside the lock.
+
+## Video tham khảo
+
+- [Master Rust Channels: How They Work & When to Use Each One | MPSC | Unbounded | Crossbeam | Guide](https://www.youtube.com/watch?v=GI2wxWZKEUI) — Semicolon, English. **xem trước.** Watch first: which channel to pick, matching the lesson’s message-passing versus shared-state split.
+- [Message Passing With Rust MPSC Channels 🦀 Rust Tutorial](https://www.youtube.com/watch?v=0P6XfhM5PRA) — Trevor Sullivan, English. std::sync::mpsc in code, close to the worker-pool lab.
+- [Crust of Rust: Channels](https://www.youtube.com/watch?v=b4mS5UPHh20) — Jon Gjengset, English. A long build-up of how a channel works, after you have used mpsc once.

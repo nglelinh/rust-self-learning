@@ -230,3 +230,8 @@ Rule for this course: in CLI programs, `unwrap()` is a last resort. Prefer `matc
 - Shadowing is a clean way to transform values.
 - Prefer explicit, non-panicking error handling.
 - Use `Result` and `?` early; it scales to larger programs.
+
+## Video tham khảo
+
+- [Common Programming Concepts in Rust](https://www.youtube.com/watch?v=2V0JaMVjzws) — Let's Get Rusty, English. **xem trước.** Watch first for let bindings, mutability, and the small programs this lesson starts from.
+- [Rust 101 - Variable shadowing VS mutable variables](https://www.youtube.com/watch?v=WFSapubNpi4) — Rust Ing, English. The shadowing-versus-mut distinction in the bindings section, with the compiler’s point of view.

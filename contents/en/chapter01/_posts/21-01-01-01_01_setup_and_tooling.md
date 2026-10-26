@@ -264,3 +264,8 @@ cargo check
 - `cargo` is your daily entry point.
 - Use the loop: format, lint, test.
 - Learn to unblock yourself via `--help` and `rustc --explain`.
+
+## Video tham khảo
+
+- [Rust Installation, Hello World, Hello Cargo -  Full Crash Rust Tutorial for Beginners](https://www.youtube.com/watch?v=R33h77nrMqc) — Francesco Ciulla, English. **xem trước.** Watch first for the install path this lesson uses: rustup, a first Cargo project, and the edit-run loop.
+- [Rust for C Engineers – Chapter 1.2 | Rust Installation](https://www.youtube.com/watch?v=N1G_ghxDCkg) — FromC2RustPublications, English. Same toolchain, framed for people coming from C: what rustup and cargo replace in a systems workflow.

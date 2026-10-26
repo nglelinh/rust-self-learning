@@ -189,3 +189,9 @@ Reflect: how would you shut down a Pingora-like proxy so in-flight requests fini
 - Pingora is the canonical public case study; Tokio/`hyper`/`axum` is the canonical stack.
 - Cancellation and admission control are the product, not extras.
 - If you cannot see tasks (`tracing`, `tokio-console`), you cannot operate them.
+
+## Video tham khảo
+
+- [Getting started with Tokio. The ultimate starter guide to writing async Rust.](https://www.youtube.com/watch?v=dOzrO40jgbU) — Dreams of Code, English. **xem trước.** Watch first: tasks on a Tokio runtime, the vocabulary this lesson uses for a real service.
+- [Rust select!: Cancellation & Cancel Safety Explained](https://www.youtube.com/watch?v=0k2Uo_IQlNI) — Semicolon, English. Cancellation when a peer stalls, which is the failure mode the lesson says you will be paged for.
+- [1 Hour Dive into Asynchronous Rust](https://www.youtube.com/watch?v=0HwrZp9CBD4) — Ardan Labs, English. A one-hour tour of async Rust at the scale of many connections, after the two shorter videos.

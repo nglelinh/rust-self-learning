@@ -202,3 +202,8 @@ fn parse_wrong_arity() {
 - Panics are for bugs and broken invariants.
 - `debug_assert!` documents internal assumptions.
 - Keep structured errors separate from user-facing formatting.
+
+## Video tham khảo
+
+- [Rust: Don't Panic](https://www.youtube.com/watch?v=usRlRCNIOG0) — No Boilerplate, English. **xem trước.** Watch first: panic is for bugs, not for ordinary failure — the rule of thumb in this lesson.
+- [48: When to panic! vs. when to use Result in Rust](https://www.youtube.com/watch?v=KR6Vb9b4HGw) — Rustfully, English. A direct panic-versus-Result split you can apply to the parser lab’s invariants.

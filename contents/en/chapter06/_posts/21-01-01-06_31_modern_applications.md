@@ -201,3 +201,9 @@ Reflect: if your capstone grew a Python API and a WASM API, where does `unsafe` 
 - Cranelift/Wasmtime and PyO3/`cxx` are the two canonical shapes (JIT vs language bridge).
 - Macros are part of the compiler surface; test their expansions.
 - The capstone’s “safe facade over a sharp core” is how these systems ship.
+
+## Video tham khảo
+
+- [Rust NYC: Jon Gjengset - Demystifying unsafe code](https://www.youtube.com/watch?v=QAz-maaH0KM) — Rust Programming Language, English. **xem trước.** Watch first: unsafe as a reviewed core behind a safe API — this lesson’s ethic.
+- [PyO3: From Python to Rust and Back Again (with David Hewitt)](https://www.youtube.com/watch?v=UmL_CA-v3O8) — Developer Voices, English. David Hewitt on PyO3, the FFI boundary the lesson names for Python extensions.
+- [Unsafe Rust and Miri by Ralf Jung - Rust Zürisee June 2023](https://www.youtube.com/watch?v=svR0p6fSUYY) — Rust Programming Language, English. Ralf Jung on Miri in the compiler toolchain, the testing half of the same map.

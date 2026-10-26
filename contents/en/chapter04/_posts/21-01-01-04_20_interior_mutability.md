@@ -495,3 +495,9 @@ Avoid it when:
 - `RefCell` is for any type; references are given out; violations panic at runtime.
 - Design APIs to avoid leaking `Ref`/`RefMut` guards to callers.
 - `OnceCell`/`OnceLock` are the standard lazy-initialization tools.
+
+## Video tham khảo
+
+- [Smart Pointers in Rust - Interior Mutability](https://www.youtube.com/watch?v=77aRH6YBKyY) — Let's Get Rusty, English. **xem trước.** Watch first: Cell and RefCell, and why the borrow checker sometimes moves the check to runtime.
+- [Rust Interior Mutability - Sneaking By The Borrow Checker](https://www.youtube.com/watch?v=HwupNf9iCJk) — Code to the Moon, English. The runtime panic when two RefCell borrows overlap — the failure mode in the cache lab.
+- [Rc and RefCell Smart Pointers - Rust](https://www.youtube.com/watch?v=KYJ95TxEC18) — danlogs, English. Rc<RefCell<T>> as the combination the lesson’s shared-cache pattern needs.

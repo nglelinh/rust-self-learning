@@ -37,3 +37,9 @@ Chương 2–8 (ownership, trait, lifetime, concurrency/async, `unsafe`/FFI, GUI
 - Công thức (nếu có) dùng `$$ ... $$`
 
 Cảm ơn bạn đã kiên nhẫn trong giai đoạn song ngữ còn đang hoàn thiện.
+
+## Video tham khảo
+
+- [\[Rust Cơ Bản\] Bài 0: Giới Thiệu Ngôn Ngữ Rust – Khóa Học Lập Trình Rust Cho Người Mới](https://www.youtube.com/watch?v=E5pq7X1IFQA) — Vie Lang, tiếng Việt. Xem trước: video tiếng Việt giới thiệu Rust là gì, đúng chỗ để bắt đầu khi lộ trình tiếng Việt còn đang mở.
+- [LẬP TRÌNH #RUST Part 1: Những khái niệm chung cơ bản của #RUST](https://www.youtube.com/watch?v=k9dM0SiX9iU) — Jayden Dang, tiếng Việt. Phần khái niệm chung bằng tiếng Việt, đủ để học song song với Chương 1 trước khi chuyển sang bài tiếng Anh.
+- [LẬP TRÌNH #RUST: Tổng hợp tài liệu từ Cơ bản tới Nâng cao về #RUST](https://www.youtube.com/watch?v=NufU_fRpStA) — Jayden Dang, tiếng Việt. Bản đồ tài liệu từ cơ bản tới nâng cao, hữu ích vì Chương 2–8 hiện chỉ có bản tiếng Anh.

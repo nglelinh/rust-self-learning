@@ -252,3 +252,9 @@ Reading `strace` output is one of the most effective ways to understand what you
 - `nix` wraps the same API in safe, typed Rust with `Result` returns — prefer it over `libc` for new code.
 - `ioctl` is the device-control interface; `epoll`/`kqueue` are how async runtimes wait for I/O.
 - `strace` is your ground truth for what syscalls a program actually makes.
+
+## Video tham khảo
+
+- [System Calls](https://www.youtube.com/watch?v=lhToWeuWWfw) — Neso Academy, English. **xem trước.** Watch first: what a system call is, before libc and the nix crate.
+- [strace feels like magic — let’s fix that (with Rust)](https://www.youtube.com/watch?v=engduNoI6DE) — fasterthanlime, English. strace, explained by writing the tracer in Rust — the tracing section of the lesson.
+- [Rust Tutorial: Using Linux libc in Rust - with the file-locker Crate](https://www.youtube.com/watch?v=UgNrDb6hQQ0) — Ben Goldberg, English. Calling libc from Rust, which is the unsafe FFI layer nix wraps.

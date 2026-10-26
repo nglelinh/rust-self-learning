@@ -230,3 +230,9 @@ Quy tắc khóa học này: trong chương trình CLI, `unwrap()` là phương �
 - Shadowing là cách sạch để biến đổi giá trị.
 - Ưu tiên xử lý lỗi tường minh, không panic.
 - Dùng `Result` và `?` sớm; cách này mở rộng được sang chương trình lớn hơn.
+
+## Video tham khảo
+
+- [\[Rust Cơ Bản\] Bài 2: Kiểu dữ liệu cơ bản và biến trong Rust  – Khóa Học Lập Trình Rust Cho Người Mới](https://www.youtube.com/watch?v=CojJ6Sc6LYI) — Vie Lang, tiếng Việt. Xem trước: biến, kiểu cơ bản, và binding bằng tiếng Việt — nửa đầu của chương trình Rust đầu tiên.
+- [Common Programming Concepts in Rust](https://www.youtube.com/watch?v=2V0JaMVjzws) — Let's Get Rusty, tiếng Anh. let, mut, và chương trình nhỏ trước khi đọc stdin.
+- [Rust 101 - Variable shadowing VS mutable variables](https://www.youtube.com/watch?v=WFSapubNpi4) — Rust Ing, tiếng Anh. Shadowing khác mut ở chỗ nào, đúng mục binding của bài.

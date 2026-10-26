@@ -204,3 +204,9 @@ Instructor note: there are multiple correct implementations; the key is to avoid
 - Use `&str` for borrowed text, `String` for owned text.
 - UTF-8 means you must not index strings by byte.
 - Use `char_indices` to build safe slicing helpers.
+
+## Video tham khảo
+
+- [All Rust string types explained](https://www.youtube.com/watch?v=CpvzeyzgQdw) — Let's Get Rusty, English. **xem trước.** Watch first for String versus &str and the other string types the lesson separates.
+- [Using slices in Rust is pretty powerful!](https://www.youtube.com/watch?v=a4o-kR2ixGc) — Flo Woelki, English. Slices as borrowed views, which is the first half of the lesson before UTF-8 indexing.
+- [Mastering Strings and UTF-8 in Rust - Full Crash Rust Tutorial for Beginners](https://www.youtube.com/watch?v=GK9Iz_ihmV8) — Francesco Ciulla, English. Why s[0] is rejected and how to walk scalars and characters the way the labs do.

@@ -266,3 +266,9 @@ Mọi thứ khác nên sống trong module có test.
 - Dùng `pub` có chủ đích để định hình API.
 - Đặt logic thật trong library; giữ `main` mỏng.
 - Cấu trúc này là nền cho dự án Rust dễ bảo trì.
+
+## Video tham khảo
+
+- [LẬP TRÌNH #RUST Part 5: Quản lý dự án và cách sử dụng Packages, Crates, Modules](https://www.youtube.com/watch?v=lbo9RU0pxDE) — Jayden Dang, tiếng Việt. Xem trước: package, crate, và module bằng tiếng Việt, đúng từ vựng và bố cục file của bài.
+- [Rust Modules - Explained Like I'm 5](https://www.youtube.com/watch?v=969j0qnJGi8) — Let's Get Rusty, tiếng Anh. Vì sao một file chưa phải là một module — phần mod và pub ngắn.
+- [Rust's Module System Explained!](https://www.youtube.com/watch?v=5RPXgDQrjio) — Let's Get Rusty, tiếng Anh. use, pub, và hệ module đầy đủ hơn cho bước tách lib và bin.
