@@ -24,6 +24,7 @@ t:
     switch_language: "Switch to Vietnamese"
     required: "Required"
     optional: "Optional"
+    lessons_menu: "Lessons"
   vi:
     title: "Lập trình Rust: Từ nền tảng đến thành thạo hệ thống"
     description: "Khóa tự học Rust — từ sở hữu bộ nhớ đến concurrency, async và lập trình hệ thống. Lộ trình tiếng Anh đã đầy đủ; tiếng Việt đang được xây dựng (đã có Chương 1)."
@@ -33,6 +34,7 @@ t:
     switch_language: "Chuyển sang tiếng Anh"
     required: "Bắt buộc"
     optional: "Tùy chọn"
+    lessons_menu: "Bài học"
 # About/contact
 author:
   name:              Nguyen Le Linh

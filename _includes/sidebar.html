@@ -18,23 +18,59 @@
 
     {% assign current_lang = page.lang | default: site.default_lang %}
     {% assign pages_list = site.pages | where: "lang", current_lang | sort: "chapter" %}
-    
-    <!-- Hiển thị các chương có sẵn cho ngôn ngữ hiện tại -->
+
+    <!-- Chapter entries; lessons come from posts in that category, sorted by order. -->
     {% for node in pages_list %}
       {% if node.title != null and node.chapter %}
         {% if node.layout == "page" %}
           {% assign is_hidden = node.hidden | default: false %}
           {% unless is_hidden %}
-            <a class="sidebar-nav-item{% if page.url == node.url %} active{% endif %}" href="{{ node.url | absolute_url }}">
-              {{node.chapter}}. {{ node.title }}
-              {% if node.lesson_type %}
-                {% if node.lesson_type == 'required' %}
-                  <span class="lesson-badge required">{% t required %}</span>
-                {% elsif node.lesson_type == 'optional' %}
-                  <span class="lesson-badge optional">{% t optional %}</span>
-                {% endif %}
+            {% assign chapter_key = "chapter" | append: node.chapter %}
+            {% assign lesson_pool = site.categories[chapter_key] %}
+            {% if lesson_pool %}
+              {% assign lessons = lesson_pool | where: "lang", current_lang | sort: "order" %}
+            {% else %}
+              {% assign lessons = site.posts | where: "chapter", "__none__" %}
+            {% endif %}
+            {% assign chapter_menu_id = "chapter-menu-" | append: current_lang | append: "-" | append: node.chapter %}
+            <div class="sidebar-chapter{% if page.chapter == node.chapter %} is-current{% endif %}">
+              {% if lessons.size > 0 %}
+                <input type="checkbox" class="sidebar-chapter-checkbox" id="{{ chapter_menu_id }}" aria-controls="{{ chapter_menu_id }}-lessons"{% if page.chapter == node.chapter %} checked{% endif %}>
               {% endif %}
-            </a>
+              <div class="sidebar-chapter-row">
+                <a class="sidebar-nav-item sidebar-chapter-link{% if page.url == node.url %} active{% endif %}" href="{{ node.url | absolute_url }}">
+                  {{ node.chapter }}. {{ node.title }}
+                  {% if node.lesson_type %}
+                    {% if node.lesson_type == 'required' %}
+                      <span class="lesson-badge required">{% t required %}</span>
+                    {% elsif node.lesson_type == 'optional' %}
+                      <span class="lesson-badge optional">{% t optional %}</span>
+                    {% endif %}
+                  {% endif %}
+                </a>
+                {% if lessons.size > 0 %}
+                  <label class="sidebar-chapter-toggle" for="{{ chapter_menu_id }}">
+                    <span class="sr-only">{% t lessons_menu %}</span>
+                  </label>
+                {% endif %}
+              </div>
+              {% if lessons.size > 0 %}
+                <div class="sidebar-submenu" id="{{ chapter_menu_id }}-lessons">
+                  {% for lesson in lessons %}
+                    <a class="sidebar-nav-item sidebar-lesson{% if page.url == lesson.url %} active{% endif %}" href="{{ lesson.url | absolute_url }}">
+                      {{ lesson.title }}
+                      {% if lesson.lesson_type %}
+                        {% if lesson.lesson_type == 'required' %}
+                          <span class="lesson-badge required">{% t required %}</span>
+                        {% elsif lesson.lesson_type == 'optional' %}
+                          <span class="lesson-badge optional">{% t optional %}</span>
+                        {% endif %}
+                      {% endif %}
+                    </a>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
           {% endunless %}
         {% endif %}
       {% endif %}

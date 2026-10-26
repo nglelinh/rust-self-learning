@@ -34,6 +34,17 @@
  * Update the foundational and global aspects of the page.
  */
 
+:root {
+  --sidebar-width: 18rem;
+}
+
+@media (max-width: 30em) {
+  :root {
+    /* Leave room for the hamburger so the drawer can still be closed. */
+    --sidebar-width: min(18rem, calc(100vw - 3.5rem));
+  }
+}
+
 /* Prevent scroll on narrow devices */
 html,
 body {
@@ -181,8 +192,8 @@ h1, h2, h3, h4, h5, h6 {
   position: fixed;
   top: 0;
   bottom: 0;
-  left: -14rem;
-  width: 14rem;
+  left: calc(var(--sidebar-width) * -1);
+  width: var(--sidebar-width);
   visibility: hidden;
   overflow-y: auto;
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -329,9 +340,9 @@ a.sidebar-nav-item:focus {
 #sidebar-checkbox:checked ~ .sidebar,
 #sidebar-checkbox:checked ~ .wrap,
 #sidebar-checkbox:checked ~ .sidebar-toggle {
-  -webkit-transform: translateX(14rem);
-      -ms-transform: translateX(14rem);
-          transform: translateX(14rem);
+  -webkit-transform: translateX(var(--sidebar-width));
+      -ms-transform: translateX(var(--sidebar-width));
+          transform: translateX(var(--sidebar-width));
 }
 
 
@@ -466,7 +477,7 @@ a.pagination-item:hover {
 
 .layout-reverse .sidebar {
   left: auto;
-  right: -14rem;
+  right: calc(var(--sidebar-width) * -1);
 }
 .layout-reverse .sidebar-toggle {
   left: auto;
@@ -476,9 +487,9 @@ a.pagination-item:hover {
 .layout-reverse #sidebar-checkbox:checked ~ .sidebar,
 .layout-reverse #sidebar-checkbox:checked ~ .wrap,
 .layout-reverse #sidebar-checkbox:checked ~ .sidebar-toggle {
-  -webkit-transform: translateX(-14rem);
-      -ms-transform: translateX(-14rem);
-          transform: translateX(-14rem);
+  -webkit-transform: translateX(calc(var(--sidebar-width) * -1));
+      -ms-transform: translateX(calc(var(--sidebar-width) * -1));
+          transform: translateX(calc(var(--sidebar-width) * -1));
 }
 
 
@@ -641,6 +652,92 @@ a.pagination-item:hover {
   background-color: #28a745;
   color: white;
   border: 1px solid #1e7e34;
+}
+
+/* Chapter rows with a collapsible lesson list */
+.sidebar-chapter-checkbox {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.sidebar-chapter-row {
+  display: flex;
+  align-items: stretch;
+  border-top: 1px solid rgba(255,255,255,.1);
+}
+
+.sidebar-chapter-row .sidebar-chapter-link {
+  flex: 1 1 auto;
+  min-width: 0;
+  border-top: 0;
+  overflow-wrap: break-word;
+}
+
+.sidebar-chapter-toggle {
+  flex: 0 0 2.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  cursor: pointer;
+  border-left: 1px solid rgba(255,255,255,.1);
+}
+
+.sidebar-chapter-toggle::before {
+  content: "";
+  display: block;
+  width: .45rem;
+  height: .45rem;
+  border-right: 2px solid rgba(255,255,255,.75);
+  border-bottom: 2px solid rgba(255,255,255,.75);
+  transform: rotate(-45deg);
+  transition: transform .2s ease-in-out;
+}
+
+.sidebar-chapter-checkbox:checked ~ .sidebar-chapter-row .sidebar-chapter-toggle::before {
+  transform: rotate(45deg);
+}
+
+.sidebar-chapter-checkbox:focus-visible ~ .sidebar-chapter-row .sidebar-chapter-toggle {
+  outline: 2px solid #268bd2;
+  outline-offset: -2px;
+}
+
+.sidebar-submenu {
+  display: none;
+}
+
+.sidebar-chapter-checkbox:checked ~ .sidebar-submenu {
+  display: block;
+}
+
+.sidebar-nav .sidebar-lesson {
+  padding-top: .4rem;
+  padding-bottom: .4rem;
+  padding-left: 1.35rem;
+  padding-right: .75rem;
+  font-size: .75rem;
+  line-height: 1.35;
+  border-top: 1px solid rgba(255,255,255,.06);
+  overflow-wrap: break-word;
+}
+
+@media (min-width: 48em) {
+  .sidebar-nav .sidebar-lesson {
+    padding-left: 1.85rem;
+    padding-right: 1rem;
+  }
+}
+
+.sidebar-chapter.is-current > .sidebar-chapter-row {
+  box-shadow: inset 3px 0 0 #268bd2;
 }
 
 /* Hover effects for badges in sidebar */
