@@ -254,3 +254,9 @@ fn main() {
 - Borrow scopes matter; end borrows early.
 - Fix borrow checker errors by restructuring, not by cloning.
 - Use `&mut` for mutation, `&` for reading.
+
+## Video tham khảo
+
+- [Understand Rust's Borrow Checker in 5 Minutes](https://www.youtube.com/watch?v=Nuba5LNy5cY) — notgull, English. **xem trước.** Watch first: one shared-or-mutable rule, in a few minutes, before the longer walkthroughs.
+- [Learn these 3 RULES to master Borrowing! | Rust Fundamentals Part 6](https://www.youtube.com/watch?v=8se_9NtF4wQ) — Green Tea Coding, English. The shared reference, mutable reference, and aliasing cases the mini-lab will hit.
+- [How to fight Rust's borrow checker... and win.](https://www.youtube.com/watch?v=Pg07HQJ0tvI) — Let's Get Rusty, English. How to read a borrow-checker error and change the code instead of cloning past it.

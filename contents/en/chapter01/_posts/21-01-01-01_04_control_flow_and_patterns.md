@@ -293,3 +293,8 @@ Instructor note: `use std::io::{self, Read};` is not needed for `read_line`; you
 - `match` + enums makes states explicit.
 - `loop` + `break` values are perfect for interactive flows.
 - Separate parsing from execution for maintainability.
+
+## Video tham khảo
+
+- [Intro to Rust Control Flow Statements & Conditional Expressions 🦀](https://www.youtube.com/watch?v=3XpxkJXggHA) — Trevor Sullivan, English. **xem trước.** Watch first: if as an expression, loops, and the control-flow shapes the typed REPL lab uses.
+- [Mastering Rust's Match Control Flow - Full Crash Rust Tutorial for Beginners](https://www.youtube.com/watch?v=sd1M_CLXl4I) — Francesco Ciulla, English. match as the workhorse, including pattern arms you will use in the REPL exercise.

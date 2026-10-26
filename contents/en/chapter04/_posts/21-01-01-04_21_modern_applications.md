@@ -201,3 +201,9 @@ Reflect: how would Rust’s ownership model change the way you design a shared c
 - Tokio pays `Arc` at scheduler boundaries; rustc pays arenas inside a session.
 - GATs (2022) are why modern traits can return borrows and futures without a box.
 - Interior mutability is an operational choice (poison, fairness, once) as much as a type.
+
+## Video tham khảo
+
+- [Crust of Rust: Send, Sync, and their implementors](https://www.youtube.com/watch?v=yOezcP-XaIw) — Jon Gjengset, English. **xem trước.** Watch first: Send and Sync, the reason a Tokio task stores Arc instead of a borrowed client.
+- [Crust of Rust: Lifetime Annotations](https://www.youtube.com/watch?v=rAl-9HwD858) — Jon Gjengset, English. Lifetime annotations as a session scope — the same idea as rustc’s arena lifetime.
+- [Crust of Rust: Smart Pointers and Interior Mutability](https://www.youtube.com/watch?v=8O0Nt9qY_vo) — Jon Gjengset, English. Arc, Weak, and interior mutability as the sharing tools those runtimes actually reach for.

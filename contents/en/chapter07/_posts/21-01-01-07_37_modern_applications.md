@@ -182,3 +182,9 @@ Reflect: if you were building a shared-cache desktop client for a multithreaded 
 - Pick a rasterizer and an ownership boundary first; crates second.
 - This lesson complements 07-32 (GPUI API) and does not replace it.
 - The Chapter 7 pipeline (events → state → layout → render) is identical in all three products; only the process split changes.
+
+## Video tham khảo
+
+- [Rendering at 1 million pixels / millisecond with GPUI - Conrad Irwin | EuroRust 2025](https://www.youtube.com/watch?v=sheIOOf-xRo) — EuroRust, English. **xem trước.** Watch first: GPUI as Zed’s GPU toolkit, one corner of this lesson’s product map.
+- [Tauri for Beginners: Build a Desktop App in Rust](https://www.youtube.com/watch?v=KhAkFqUi9l0) — Codynn, English. Tauri as the WebView-plus-Rust alternative the lesson contrasts with a full GPU engine.
+- [Rust GUI with egui](https://www.youtube.com/watch?v=YNvfqmEgUFQ) — Saad Saleem, English. egui’s immediate mode, the third rasterization choice next to GPUI and Tauri.

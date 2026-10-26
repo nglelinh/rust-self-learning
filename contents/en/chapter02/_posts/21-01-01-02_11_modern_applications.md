@@ -196,3 +196,9 @@ Scale remains. A borrow checker that is local to a function does not automatical
 - Drop and exclusive borrows delete a vulnerability *class*; they do not delete logic bugs.
 - Production APIs encode absence with `Option`/`Result` and identity with ids, not raw pointers.
 - Policy documents now talk about memory-safe languages because ownership scaled past the classroom.
+
+## Video tham khảo
+
+- [Miguel Ojeda (Rust for Linux): KEYNOTE | RustConf 2024](https://www.youtube.com/watch?v=FRMJzNYut4g) — Rust Foundation, English. **xem trước.** Watch first: a kernel keynote on why ownership is a memory-safety policy, not a homework rule.
+- [Rust for Linux with Alice Ryhl and Greg Kroah-Hartman](https://www.youtube.com/watch?v=HM-JM4DoYD4) — corrode, English. Alice Ryhl and Greg Kroah-Hartman on the Rust Binder work — Drop as the use-after-free fix.
+- [Understanding Ownership in Rust](https://www.youtube.com/watch?v=VFIOSWy93H0) — Let's Get Rusty, English. A compact restatement of move and borrow so you can point at which rule a rewrite is buying.

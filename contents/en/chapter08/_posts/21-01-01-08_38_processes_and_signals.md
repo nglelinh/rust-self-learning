@@ -235,3 +235,9 @@ On Unix, use `ExitStatus::code()` (returns `Option<i32>` — `None` if killed by
 - Signals are asynchronous interrupts; raw handlers are restricted to async-signal-safe ops.
 - Use `signal-hook` or the atomic-flag pattern for safe signal handling.
 - Always `wait()` for children to avoid zombies; check `ExitStatus::code()` and `::signal()`.
+
+## Video tham khảo
+
+- [fork() and exec() System Calls](https://www.youtube.com/watch?v=IFEFVXvjiHY) — Neso Academy, English. **xem trước.** Watch first: fork and exec, the process model behind Rust’s Command. The examples are C.
+- [Spawn External Processes with Rust Standard Library 🦀 Rust Programming Tutorial for Developers](https://www.youtube.com/watch?v=RtVzlk4om6U) — Trevor Sullivan, English. std::process in Rust: spawn, wait, and exit status, which is the coding half of the lesson.
+- [Sending and Handling Signals in C (kill, signal, sigaction)](https://www.youtube.com/watch?v=83M5-NPDeWs) — Jacob Sorber, English. SIGINT, SIGTERM, and sigaction — the signals section, shown in C.

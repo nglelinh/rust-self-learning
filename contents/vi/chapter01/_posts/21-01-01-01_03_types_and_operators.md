@@ -251,3 +251,9 @@ Nếu so sánh số thực về sau bị nhiễu, hãy giới thiệu so sánh g
 - Tránh `as` thu hẹp trừ khi đã kiểm tra khoảng.
 - Dùng kiểu trung gian rộng hơn để giảm overflow.
 - Ưu tiên `Option`/`Result` để biểu diễn tính toán không xác định hoặc thất bại.
+
+## Video tham khảo
+
+- [\[Rust Cơ Bản\] Bài 2: Kiểu dữ liệu cơ bản và biến trong Rust  – Khóa Học Lập Trình Rust Cho Người Mới](https://www.youtube.com/watch?v=CojJ6Sc6LYI) — Vie Lang, tiếng Việt. Xem trước: kiểu dữ liệu cơ bản và biến bằng tiếng Việt, đúng bản đồ kiểu ở đầu bài.
+- [Rust from Zero -- Primitive number types and how to do safe arithmetic (i32, u32, usize, isize, etc)](https://www.youtube.com/watch?v=4w2tRIZbQ7E) — rvne, tiếng Anh. i32, u32, usize, và phép toán có kiểm tra tràn — phần số và an toàn overflow.
+- [Visualizing memory layout of Rust's data types](https://www.youtube.com/watch?v=7_o-YRxf_cc) — Sreekanth, tiếng Anh. Cách số, tuple, và mảng nằm trong bộ nhớ, phía sau bản đồ kiểu.

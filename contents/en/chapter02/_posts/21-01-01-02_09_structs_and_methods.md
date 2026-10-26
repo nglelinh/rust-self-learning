@@ -201,3 +201,8 @@ fn config_rejects_zero_port() {
 - Keep invariants in one place (validated constructors).
 - Use private fields to prevent invalid states.
 - Choose method receivers based on whether you read, mutate, or consume the value.
+
+## Video tham khảo
+
+- [Structs in Rust](https://www.youtube.com/watch?v=n3bPhdiJm9I) — Let's Get Rusty, English. **xem trước.** Watch first: struct layout, fields, and constructing values before methods.
+- [Implement Methods on Rust Structs 🦀](https://www.youtube.com/watch?v=7EYSXQFRyKY) — Trevor Sullivan, English. impl blocks, methods, and associated functions for the config-parsing exercise.

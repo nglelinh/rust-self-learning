@@ -655,3 +655,9 @@ This skeleton compiles and runs. Replace the stub network task with the real Web
 - Use two channels: one for inbound events (network → view) and one for outbound messages (view → network).
 - The UI thread is sacred: never block it. Everything slow goes in `cx.spawn`.
 - The mindset shift from browser: you control threads, events, state, and rendering explicitly. This is more work and far more power.
+
+## Video tham khảo
+
+- [Code Your Own Desktop GUI App With Rust Iced Crate](https://www.youtube.com/watch?v=2CQ4hLB2IMw) — Jonkero, English. **xem trước.** Watch first: an iced app as events, state, and view — the architecture this lesson draws.
+- [#33 Event-Driven Programming Part-1: GUI example, events, event-loop, run-to-completion, no-blocking](https://www.youtube.com/watch?v=rfb2JI1GGIc) — Quantum Leaps, LLC, English. The event loop those messages run on, before you wire Tokio tasks into it.
+- [Getting started with Tokio. The ultimate starter guide to writing async Rust.](https://www.youtube.com/watch?v=dOzrO40jgbU) — Dreams of Code, English. Tokio tasks for the async half of the chat skeleton.

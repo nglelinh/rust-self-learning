@@ -444,3 +444,9 @@ A make/cargo-like system spawns threads for independent build tasks and uses a m
 - Rust prevents data races; deadlocks are still your responsibility.
 - Keep lock scopes small: compute outside the lock, accumulate inside.
 - `Send` and `Sync` are compile-time guarantees, not runtime overhead.
+
+## Video tham khảo
+
+- [Concurrency in Rust - Creating Threads](https://www.youtube.com/watch?v=06WcsNPUNC8) — Let's Get Rusty, English. **xem trước.** Watch first: spawning threads and joining them, before shared state.
+- [Concurrency in Rust - Sharing State](https://www.youtube.com/watch?v=mupwF9jbVZ4) — Let's Get Rusty, English. Arc<Mutex<T>> for the aggregator lab, and what the mutex is actually guarding.
+- [Crust of Rust: Send, Sync, and their implementors](https://www.youtube.com/watch?v=yOezcP-XaIw) — Jon Gjengset, English. Send and Sync, so you can explain which types are allowed to cross a thread boundary.

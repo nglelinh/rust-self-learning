@@ -221,3 +221,8 @@ If file IO tests are awkward, factor parsing into `load_config_str(&str)` and te
 - `?` keeps the success path readable.
 - Typed errors are testable and maintainable.
 - Put parsing and validation in one place; keep callers simple.
+
+## Video tham khảo
+
+- [A Simpler Way to See Results](https://www.youtube.com/watch?v=s5S2Ed5T-dc) — Logan Smith, English. **xem trước.** Watch first: Result as data, which is the mental model behind the config-loader lab.
+- [Rust Error Handling Explained: thiserror vs anyhow (Best Practices)](https://www.youtube.com/watch?v=-c9JEexiHPE) — Semicolon, English. Where a small local error enum stops and thiserror or anyhow starts — the design section.

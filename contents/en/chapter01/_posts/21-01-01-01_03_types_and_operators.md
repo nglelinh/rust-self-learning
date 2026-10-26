@@ -251,3 +251,8 @@ If floating comparisons become noisy later, introduce approximate comparisons. F
 - Avoid narrowing `as` casts unless you validated the range.
 - Use wider intermediate types to reduce overflow risk.
 - Prefer `Option`/`Result` to represent undefined or failing computations.
+
+## Video tham khảo
+
+- [Rust from Zero -- Primitive number types and how to do safe arithmetic (i32, u32, usize, isize, etc)](https://www.youtube.com/watch?v=4w2tRIZbQ7E) — rvne, English. **xem trước.** Watch first for i32, u32, usize, and the checked arithmetic this lesson wants instead of silent wrap.
+- [Visualizing memory layout of Rust's data types](https://www.youtube.com/watch?v=7_o-YRxf_cc) — Sreekanth, English. How those numeric types, tuples, and arrays actually sit in memory — the layout behind the type map.

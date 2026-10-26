@@ -206,3 +206,9 @@ Reflect: if you were designing a plugin trait for a proxy (`async fn on_request`
 - RFC 3185 made `async fn` a trait-level ABI; dyn dispatch is still a separate bill.
 - Your HashMap is hashbrown; hasher and allocator remain your responsibility.
 - Iterators are how compilers and edge filters keep allocation honest.
+
+## Video tham khảo
+
+- [Rust Error Handling Explained: thiserror vs anyhow (Best Practices)](https://www.youtube.com/watch?v=-c9JEexiHPE) — Semicolon, English. **xem trước.** Watch first: the anyhow-versus-thiserror product split this lesson treats as convention.
+- [Two Ways To Do Dynamic Dispatch](https://www.youtube.com/watch?v=wU8hQvU8aKM) — Logan Smith, English. Dynamic versus static dispatch at an API boundary, the trait half of the lesson.
+- [CppCon 2017: Matt Kulukundis “Designing a Fast, Efficient, Cache-friendly Hash Table, Step by Step”](https://www.youtube.com/watch?v=ncHmEUmJZf4) — CppCon, English. Matt Kulukundis’s CppCon talk on SwissTable, the hash table design behind std HashMap. The talk is C++.

@@ -422,3 +422,9 @@ Rule of thumb: **borrow for processing, own for storing**.
 - Explicitly returning `&'a str` (not `&str` via elision) can be more permissive.
 - Avoid self-referential structs; keep buffers separate from views, or store indices.
 - Convert `Option` to `Result` when you need actionable errors.
+
+## Video tham khảo
+
+- [Intro to Embedded Rust Part 8: Lifetimes and Lifetime Annotations | DigiKey](https://www.youtube.com/watch?v=3hzrRgXeNuk) — DigiKey, English. **xem trước.** Watch first: lifetime annotations on structs and functions, close to the CsvRow lab.
+- [but what is 'a lifetime?](https://www.youtube.com/watch?v=gRAVZv7V91Q) — leddoo, English. Why a borrowed field ties the struct to someone else’s data — view type versus owned type.
+- [A new tool for visualizing Rust lifetimes](https://www.youtube.com/watch?v=NV6Xo_el_2o) — Let's Get Rusty, English. A short look at a lifetime visualizer you can use when a borrowed struct stops compiling.

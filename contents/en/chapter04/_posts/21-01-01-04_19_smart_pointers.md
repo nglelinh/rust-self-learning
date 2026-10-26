@@ -398,3 +398,9 @@ Shared ownership is powerful — but it's an escape hatch, not a default.
 - `Arc`: shared ownership across threads; atomic counter, thread-safe.
 - `Weak`: break cycles and represent non-owning links.
 - Shared ownership is a design choice — prefer clear ownership hierarchies first.
+
+## Video tham khảo
+
+- [Smart Pointers in Rust - Reference Counting](https://www.youtube.com/watch?v=M9Owp3iLigg) — Let's Get Rusty, English. **xem trước.** Watch first: Rc and shared ownership on one thread, before Arc and Weak.
+- [Smart Pointers in Rust - The Deref Trait](https://www.youtube.com/watch?v=dYEC6NElVOg) — Let's Get Rusty, English. Deref, so Box and the other pointers feel like the value they own.
+- [Crust of Rust: Smart Pointers and Interior Mutability](https://www.youtube.com/watch?v=8O0Nt9qY_vo) — Jon Gjengset, English. The long Crust of Rust session on Box, Rc, RefCell, and when sharing is a smell.

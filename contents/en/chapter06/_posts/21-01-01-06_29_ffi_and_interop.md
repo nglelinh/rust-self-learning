@@ -509,3 +509,9 @@ And for the overall wrapper:
 - Encapsulate C handles in RAII structs that implement `Drop`.
 - Translate C error codes into Rust `Result` types.
 - Never return raw pointers to callers — convert to safe Rust types immediately.
+
+## Video tham khảo
+
+- [Using C Libraries in Rust](https://www.youtube.com/watch?v=UpmFxJDcFfo) — Caleb Curry, English. **xem trước.** Watch first: calling a C library from Rust, which is the buffer-sum lab’s direction.
+- [RustConf 2018 - Embedding Rust in C/C++ by Katharina](https://www.youtube.com/watch?v=x9acx2zgx4Q) — Rust Programming Language, English. The other direction: embedding Rust in C and C++, from RustConf, for the ABI section.
+- [Crust of Rust: Build Scripts and Foreign-Function Interfaces (FFI)](https://www.youtube.com/watch?v=pePqWoTnSmQ) — Jon Gjengset, English. Build scripts, bindgen-style FFI, and the linking story, as a long follow-up.
