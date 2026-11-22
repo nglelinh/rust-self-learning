@@ -10,27 +10,27 @@ categories:
 lesson_type: required
 ---
 
-Rust khuyến khích bạn diễn đạt quyết định bằng `match` và pattern để các trạng thái bất khả thi không thể biểu diễn. Bài này xây thói quen dùng biểu thức (`if`, `match`) và enum để logic trở nên tường minh.
+Rust khuyến khích diễn đạt logic rẽ nhánh bằng `match` và pattern matching để các trạng thái bất hợp lệ không thể tồn tại trong chương trình. Bài học này xây dựng thói quen sử dụng `if`, `match` như các biểu thức trả về giá trị, kết hợp với `enum` để luồng xử lý trở nên tường minh.
 
-## Kế hoạch giảng 60 phút
+## Kế hoạch giảng dạy 60 phút
 
-- 0 đến 10 phút: `if` như một biểu thức và rẽ nhánh cơ bản.
-- 10 đến 30 phút: `match`: tính cạn kiệt, pattern, và guard.
-- 30 đến 45 phút: Vòng lặp: `for`, `while`, `loop`, và giá trị `break`.
-- 45 đến 60 phút: Mini-lab: REPL có kiểu với enum lệnh và điều phối bằng `match`.
+- 0 đến 10 phút: `if` với vai trò biểu thức và rẽ nhánh cơ bản.
+- 10 đến 30 phút: `match`: tính đầy đủ (exhaustiveness), các dạng pattern và điều kiện canh (guard).
+- 30 đến 45 phút: Vòng lặp `for`, `while`, `loop` và trả về giá trị qua `break`.
+- 45 đến 60 phút: Bài thực hành ngắn: xây dựng REPL có kiểm tra kiểu với `enum` lệnh và điều phối bằng `match`.
 
-## Mục tiêu học
+## Mục tiêu học tập
 
-Cuối bài, bạn có thể:
+Sau bài học này, bạn có thể:
 
-- Dùng `if` và `match` như biểu thức (trả về giá trị).
-- Viết `match` cạn kiệt và đọc lỗi compiler khi thiếu nhánh.
-- Dùng các dạng pattern thường gặp: literal, khoảng, destructuring, `_` bắt tất cả.
-- Xây bộ thông dịch lệnh đơn giản: parse input thành enum.
+- Sử dụng `if` và `match` như các biểu thức trả về giá trị.
+- Viết khối `match` đầy đủ mọi trường hợp và đọc hiểu thông báo lỗi của trình biên dịch khi thiếu nhánh.
+- Vận dụng các dạng pattern phổ biến: hằng số (literal), khoảng giá trị, phân rã cấu trúc (destructuring) và mẫu đại diện `_`.
+- Xây dựng bộ thông dịch lệnh đơn giản bằng cách phân tích đầu vào thành `enum`.
 
-## `if` như một biểu thức
+## `if` là một biểu thức
 
-`if` trong Rust trả về giá trị:
+Trong Rust, `if` có thể trả về giá trị trực tiếp:
 
 ```rust
 let n = 10;
@@ -38,9 +38,9 @@ let kind = if n % 2 == 0 { "even" } else { "odd" };
 println!("{n} is {kind}");
 ```
 
-Điểm giảng: hai nhánh phải trả cùng kiểu.
+Lưu ý: cả hai nhánh của `if`/`else` phải trả về cùng một kiểu dữ liệu.
 
-## `match`: con ngựa kéo
+## `match`: công cụ rẽ nhánh chủ lực
 
 ### `match` cơ bản
 
@@ -55,11 +55,11 @@ let label = match x {
 };
 ```
 
-Tính cạn kiệt là tính năng: Rust buộc bạn nghĩ về mọi trường hợp.
+Tính đầy đủ (exhaustiveness) là một cơ chế bảo vệ quan trọng: trình biên dịch buộc bạn phải xử lý mọi trường hợp có thể xảy ra.
 
-### Pattern bạn sẽ dùng liên tục
+### Các dạng pattern thường dùng
 
-#### Khoảng
+#### Khoảng giá trị
 
 ```rust
 let grade = 87;
@@ -72,7 +72,7 @@ let letter = match grade {
 };
 ```
 
-#### Guard
+#### Điều kiện canh (guard)
 
 ```rust
 let n = -3;
@@ -83,7 +83,7 @@ let desc = match n {
 };
 ```
 
-#### Destructuring tuple
+#### Phân rã tuple (destructuring)
 
 ```rust
 let p = (10, 20);
@@ -95,9 +95,9 @@ let s = match p {
 };
 ```
 
-### Khớp `Option` và `Result`
+### Đối khớp `Option` và `Result`
 
-Đây là chỗ `match` trở thành công cụ an toàn:
+Đây là ngữ cảnh `match` phát huy rõ nhất giá trị an toàn kiểu:
 
 ```rust
 let s = "42";
@@ -110,11 +110,11 @@ let n = match s.parse::<i32>() {
 };
 ```
 
-Sau này ta sẽ ưu tiên `?`, nhưng `match` là cách rõ nhất để dạy luồng điều khiển.
+Ở các phần sau, ta sẽ dùng nhiều toán tử `?` để mã ngắn gọn hơn, nhưng `match` là cách trực quan nhất để nắm rõ luồng điều khiển.
 
 ## Vòng lặp
 
-### `for` trên một khoảng
+### `for` duyệt trên một khoảng
 
 ```rust
 for i in 0..3 {
@@ -122,7 +122,7 @@ for i in 0..3 {
 }
 ```
 
-### `while` khi bạn có điều kiện
+### `while` lặp theo điều kiện
 
 ```rust
 let mut n = 3;
@@ -132,9 +132,9 @@ while n > 0 {
 }
 ```
 
-### `loop` khi bạn `break` tường minh
+### `loop` lặp vô hạn và thoát tường minh bằng `break`
 
-`break` trong Rust có thể trả về giá trị:
+Trong Rust, `break` có thể kèm theo một giá trị trả về cho biểu thức `loop`:
 
 ```rust
 let mut n = 0;
@@ -147,11 +147,11 @@ let found = loop {
 assert_eq!(found, 5);
 ```
 
-Điểm giảng: `loop` lý tưởng cho REPL và vòng thử lại.
+Lưu ý: `loop` rất phù hợp cho vòng lặp tương tác (REPL) hoặc cơ chế thử lại (retry).
 
-### `if let` / `while let` (pattern thường gặp)
+### `if let` và `while let`
 
-Dùng khi bạn chỉ quan tâm một pattern:
+Sử dụng khi bạn chỉ quan tâm đến một pattern duy nhất và muốn bỏ qua các nhánh còn lại:
 
 ```rust
 let maybe = Some(3);
@@ -167,9 +167,9 @@ while let Some(x) = it.next() {
 }
 ```
 
-## Mini-lab: REPL có kiểu
+## Bài thực hành ngắn: xây dựng REPL có kiểm tra kiểu
 
-Mục tiêu: đọc một dòng, parse thành enum `Command`, rồi thực thi bằng `match`.
+Mục tiêu: đọc từng dòng đầu vào, phân tích thành kiểu `enum Command`, sau đó thực thi bằng `match`.
 
 ### Bước 1: định nghĩa mô hình lệnh
 
@@ -183,9 +183,9 @@ enum Command {
 }
 ```
 
-### Bước 2: parse input thành lệnh
+### Bước 2: phân tích chuỗi đầu vào thành lệnh
 
-Bắt đầu với format chặt: `add 1 2` hoặc `mul 3 4`.
+Bắt đầu với cú pháp cố định: `add 1 2` hoặc `mul 3 4`.
 
 ```rust
 fn parse_command(line: &str) -> Result<Command, String> {
@@ -212,12 +212,12 @@ fn parse_command(line: &str) -> Result<Command, String> {
 }
 ```
 
-Điểm giảng:
+Các điểm cần lưu ý:
 
-- Guard (`if parts.len() == 3`) giữ logic parse rõ.
-- `Result` cho phép báo lỗi parse mà không panic.
+- Điều kiện canh (`if parts.len() == 3`) giúp logic kiểm tra số lượng tham số rõ ràng.
+- Trả về `Result` cho phép báo lỗi cú pháp mà không làm chương trình panic.
 
-### Bước 3: thực thi bằng `match`
+### Bước 3: thực thi lệnh bằng `match`
 
 ```rust
 fn execute(cmd: Command) -> bool {
@@ -239,11 +239,11 @@ fn execute(cmd: Command) -> bool {
 }
 ```
 
-Trả `bool` làm vòng REPL đơn giản: tiếp tục hoặc thoát.
+Giá trị `bool` trả về giúp điều khiển vòng lặp REPL đơn giản: `true` để tiếp tục, `false` để thoát.
 
-### Bước 4: nối với một vòng lặp
+### Bước 4: ghép nối trong vòng lặp chính
 
-Dùng `loop` và `break`:
+Sử dụng `loop` và `break`:
 
 ```rust
 use std::io::{self, Read};
@@ -272,30 +272,30 @@ fn main() {
 }
 ```
 
-Ghi chú giảng viên: `use std::io::{self, Read};` không cần cho `read_line`; bạn có thể giản import trong live code.
+Lưu ý: phần `Read` trong `use std::io::{self, Read};` không cần thiết cho `read_line`; khi viết mã thực tế, bạn chỉ cần `use std::io;`.
 
 ## Cạm bẫy thường gặp
 
-1. Dùng `_` quá sớm: mất lợi ích cạn kiệt. Ưu tiên các nhánh tường minh.
-2. Panic khi input xấu: giữ lỗi parse có thể phục hồi trong REPL.
-3. Trộn parse với thực thi: hãy tách để dễ test.
+1. Dùng nhánh đại diện `_` quá sớm: làm mất lợi ích kiểm tra tính đầy đủ của trình biên dịch khi thêm biến thể mới vào `enum`. Nên liệt kê tường minh các nhánh khi có thể.
+2. Để chương trình panic khi đầu vào sai: trong vòng lặp REPL, lỗi phân tích cú pháp cần được xử lý để chương trình tiếp tục chạy.
+3. Gộp chung phần phân tích cú pháp và phần thực thi: cần tách riêng hai bước này để dễ viết kiểm thử đơn vị.
 
 ## Bài tập
 
-1. Thêm lệnh `sub`.
-2. Thêm `repeat <n> <word>`.
-3. Thêm unit test cho `parse_command`.
-4. Cải thiện lỗi để nêu đúng input sai.
+1. Bổ sung lệnh `sub` để thực hiện phép trừ.
+2. Bổ sung lệnh `repeat <n> <word>` để in chuỗi lặp lại `n` lần.
+3. Viết các bài kiểm thử đơn vị cho hàm `parse_command`.
+4. Cải thiện thông báo lỗi để chỉ rõ phần dữ liệu đầu vào bị sai.
 
 ## Tóm tắt
 
-- `if` và `match` là biểu thức.
-- `match` + enum làm trạng thái tường minh.
-- `loop` + giá trị `break` rất hợp luồng tương tác.
-- Tách parse khỏi thực thi để dễ bảo trì.
+- `if` và `match` đều là biểu thức trả về giá trị.
+- Kết hợp `match` và `enum` giúp biểu diễn các trạng thái hợp lệ một cách tường minh.
+- `loop` kết hợp `break` trả về giá trị rất phù hợp cho luồng xử lý tương tác.
+- Tách biệt bước phân tích đầu vào khỏi bước thực thi giúp mã nguồn dễ kiểm thử và bảo trì.
 
 ## Video tham khảo
 
-- [LẬP TRÌNH #RUST Part 4: Cách sử dụng #Enum, Option Enum & Match](https://www.youtube.com/watch?v=daOoyk9d43I) — Jayden Dang, tiếng Việt. Xem trước: match, Option, và enum bằng tiếng Việt — phần match là trọng tâm của bài.
-- [Intro to Rust Control Flow Statements & Conditional Expressions 🦀](https://www.youtube.com/watch?v=3XpxkJXggHA) — Trevor Sullivan, tiếng Anh. if như biểu thức và vòng lặp, đúng phần luồng điều khiển trước match.
-- [Mastering Rust's Match Control Flow - Full Crash Rust Tutorial for Beginners](https://www.youtube.com/watch?v=sd1M_CLXl4I) — Francesco Ciulla, tiếng Anh. match và pattern chi tiết hơn, dùng cho mini-lab REPL có kiểu.
+- [LẬP TRÌNH #RUST Part 4: Cách sử dụng #Enum, Option Enum & Match](https://www.youtube.com/watch?v=daOoyk9d43I) — Jayden Dang (tiếng Việt). Nên xem trước: giải thích `match`, `Option` và `enum` bằng tiếng Việt — trọng tâm của bài học.
+- [Intro to Rust Control Flow Statements & Conditional Expressions 🦀](https://www.youtube.com/watch?v=3XpxkJXggHA) — Trevor Sullivan (tiếng Anh). Trình bày `if` như một biểu thức và các cấu trúc vòng lặp.
+- [Mastering Rust's Match Control Flow - Full Crash Rust Tutorial for Beginners](https://www.youtube.com/watch?v=sd1M_CLXl4I) — Francesco Ciulla (tiếng Anh). Phân tích sâu hơn về `match` và pattern, hữu ích cho bài thực hành REPL.
