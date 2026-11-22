@@ -10,62 +10,58 @@ categories:
 lesson_type: required
 ---
 
-Rust nghiêm với kiểu, nhưng phần thưởng là ít phép chuyển ẩn và ít bất ngờ lúc chạy. Bài này dạy "hình dạng kiểu" của Rust và những cách chuyển đổi an toàn nhất.
+Rust kiểm soát hệ thống kiểu dữ liệu rất chặt chẽ, đổi lại chương trình tránh được các phép ép kiểu ngầm và hạn chế lỗi bất ngờ khi chạy. Bài học này trình bày hệ thống kiểu cơ bản của Rust và các cách chuyển đổi kiểu an toàn.
 
-## Kế hoạch giảng 60 phút
+## Kế hoạch giảng dạy 60 phút
 
-- 0 đến 10 phút: Suy luận kiểu và vì sao Rust quan tâm.
-- 10 đến 25 phút: Kiểu số và literal: chọn đúng kiểu.
-- 25 đến 40 phút: Chuyển đổi: `as`, `try_into`, và parse.
-- 40 đến 50 phút: Tuple, mảng, và an toàn khi đánh chỉ số.
-- 50 đến 60 phút: Mini-lab: tính mean/variance an toàn và test edge case.
+- 0 đến 10 phút: Cơ chế suy luận kiểu và lý do Rust yêu cầu rõ ràng về kiểu.
+- 10 đến 25 phút: Các kiểu số, hằng số (literal) và cách chọn kiểu phù hợp.
+- 25 đến 40 phút: Các hình thức chuyển đổi kiểu: `as`, `try_into` và `parse`.
+- 40 đến 50 phút: Tuple, mảng và vấn đề an toàn khi truy cập theo chỉ số.
+- 50 đến 60 phút: Bài thực hành ngắn: tính giá trị trung bình (mean) và phương sai (variance) an toàn, kèm kiểm thử các trường hợp biên.
 
-## Mục tiêu học
+## Mục tiêu học tập
 
-Cuối bài, bạn có thể:
+Sau bài học này, bạn có thể:
 
-- Giải thích các họ kiểu số của Rust và khi nào chọn từng họ.
-- Dự đoán khi nào Rust đòi chuyển đổi tường minh.
-- Tránh cast mất mát và overflow ngoài ý muốn.
-- Dùng tuple/mảng đúng, và hiểu indexing có thể panic.
+- Phân biệt các nhóm kiểu số trong Rust và biết khi nào nên chọn từng loại.
+- Nhận biết những tình huống Rust yêu cầu chuyển đổi kiểu tường minh.
+- Tránh các phép ép kiểu gây mất dữ liệu và tràn số (overflow) ngoài ý muốn.
+- Sử dụng đúng tuple và mảng, đồng thời hiểu rằng truy cập chỉ số trực tiếp có thể gây panic.
 
-## Suy luận kiểu (Rust làm gì giúp bạn)
+## Suy luận kiểu
 
-Rust thường suy ra kiểu từ cách dùng:
+Trong nhiều trường hợp, Rust có thể tự suy luận kiểu dữ liệu dựa trên ngữ cảnh sử dụng:
 
 ```rust
 let x = 1;
 let y = x + 2;
 ```
 
-Nhưng suy luận có giới hạn. Nếu compiler không xác định được một kiểu duy nhất, nó sẽ yêu cầu bạn chú thích.
+Tuy nhiên, cơ chế suy luận có giới hạn. Khi trình biên dịch không thể xác định duy nhất một kiểu, nó sẽ yêu cầu bạn chú thích rõ. Thói quen tốt là chỉ bổ sung chú thích kiểu tối thiểu vừa đủ để xóa bỏ sự nhập nhằng.
 
-Thói quen giảng viên: khi compiler đòi kiểu, thêm chú thích nhỏ nhất đủ để hết nhập nhằng.
-
-## Kiểu số trong Rust (bản đồ thực dụng)
+## Các kiểu số trong Rust
 
 ### Số nguyên
 
-- Có dấu: `i8 i16 i32 i64 i128 isize`
-- Không dấu: `u8 u16 u32 u64 u128 usize`
+- Có dấu: `i8`, `i16`, `i32`, `i64`, `i128`, `isize`
+- Không dấu: `u8`, `u16`, `u32`, `u64`, `u128`, `usize`
 
-Quy tắc ngón tay cái:
+Nguyên tắc chọn kiểu thực dụng:
 
-- Dùng `i32` cho hầu hết bộ đếm trong bộ nhớ, trừ khi có lý do.
-- Dùng `usize` cho chỉ số/kích thước (vì slice/vec dùng nó).
-- Dùng `u64` cho các đếm không bao giờ âm (ví dụ số byte).
+- Dùng `i32` cho hầu hết bộ đếm thông thường trong bộ nhớ, trừ khi có yêu cầu đặc biệt.
+- Dùng `usize` cho chỉ số và kích thước tập hợp (tương thích với `slice` và `Vec`).
+- Dùng `u64` cho các đại lượng đếm không bao giờ âm và có thể rất lớn (ví dụ kích thước tính theo byte).
 
 ### Số thực
 
 - `f32` và `f64`
 
-Quy tắc ngón tay cái:
+Nguyên tắc chọn kiểu: mặc định dùng `f64`, chỉ chuyển sang `f32` khi cần tối ưu bộ nhớ/băng thông hoặc làm việc với API hướng GPU.
 
-- Mặc định `f64` trừ khi bạn tối ưu bộ nhớ/băng thông hoặc dùng API hướng GPU.
+### Hằng số (literal)
 
-### Literal
-
-Literal Rust có thể được chú thích:
+Các hằng số trong Rust có thể gắn trực tiếp hậu tố kiểu dữ liệu:
 
 ```rust
 let a = 10u64;
@@ -73,16 +69,16 @@ let b = 3.14f64;
 let c = 1_000_000usize;
 ```
 
-Dạy rằng literal có chú thích là cách sạch để dẫn dắt suy luận.
+Gắn chú thích kiểu trực tiếp vào literal là cách gọn gàng để định hướng cho bộ suy luận kiểu.
 
-## Overflow và an toàn
+## Tràn số (overflow) và phép toán an toàn
 
-Hành vi then chốt:
+Hành vi tràn số nguyên trong Rust phụ thuộc vào chế độ biên dịch:
 
-- Ở bản debug, nhiều overflow sẽ panic.
-- Ở bản release, overflow số nguyên wrap (bù hai) trừ khi bạn dùng phương thức checked/saturating.
+- Ở chế độ **debug**, phần lớn phép toán bị tràn số sẽ gây panic.
+- Ở chế độ **release**, tràn số nguyên thực hiện phép quay vòng theo biểu diễn bù hai (two's complement wrapping), trừ khi bạn chủ động dùng các phương thức kiểm tra hoặc bão hòa.
 
-Các phép an toàn hơn:
+Các phương thức tính toán an toàn hơn:
 
 ```rust
 let (sum, overflowed) = a.overflowing_add(b);
@@ -90,38 +86,38 @@ let sum = a.checked_add(b);
 let sum = a.saturating_add(b);
 ```
 
-Điểm giảng: nếu thuật toán dựa vào wraparound, hãy nói rõ. Nếu không, dùng checked math ở chỗ quan trọng.
+Lưu ý: nếu thuật toán thực sự cần hành vi quay vòng (wraparound), hãy dùng phương thức tường minh (như `wrapping_add`). Trong các tính toán quan trọng khác, hãy dùng nhóm phương thức `checked_*` để phát hiện tràn số.
 
-## Chuyển đổi: ba nhóm
+## Ba nhóm chuyển đổi kiểu
 
-### 1. Parse từ chuỗi
+### 1. Phân tích từ chuỗi (`parse`)
 
-Parse trả về `Result`:
+`parse` luôn trả về `Result`:
 
 ```rust
 let n: i64 = "42".parse()?;
 ```
 
-Nếu muốn thông điệp lỗi tốt hơn, bắt lỗi và thêm ngữ cảnh.
+Nếu cần thông báo lỗi rõ ngữ cảnh hơn, hãy bắt lỗi và chuyển đổi thông điệp trước khi trả về.
 
-### 2. Cast bằng `as` (nhanh, nhưng có thể mất mát)
+### 2. Ép kiểu bằng `as` (nhanh nhưng có thể mất dữ liệu)
 
-`as` là công cụ thô:
+Toán tử `as` không kiểm tra miền giá trị khi ép kiểu:
 
 ```rust
 let x: u8 = 300u16 as u8; // becomes 44
 ```
 
-Dạy: `as` phù hợp một tập trường hợp hẹp:
+Chỉ nên dùng `as` trong một phạm vi hẹp:
 
-- mở rộng số nguyên (ví dụ `u8` sang `u64`)
-- chuyển float-sang-float (`f32` <-> `f64`)
+- Mở rộng số nguyên sang kiểu rộng hơn (ví dụ `u8` sang `u64`).
+- Chuyển đổi giữa hai kiểu số thực (`f32` ↔ `f64`).
 
-Tránh: thu hẹp trừ khi đã kiểm tra khoảng giá trị.
+Tránh dùng `as` để thu hẹp miền giá trị, trừ khi bạn đã kiểm tra biên trước đó.
 
-### 3. Chuyển số nguyên có thể thất bại (`try_into`)
+### 3. Chuyển đổi số nguyên có kiểm tra (`TryFrom` / `TryInto`)
 
-Dùng `TryFrom`/`TryInto` để tránh cắt cụt thầm lặng:
+Sử dụng `TryFrom` hoặc `TryInto` để tránh tình trạng cắt cụt dữ liệu âm thầm:
 
 ```rust
 use std::convert::TryFrom;
@@ -130,7 +126,7 @@ let x = u8::try_from(300u16);
 assert!(x.is_err());
 ```
 
-Trong code thật:
+Trong mã nguồn thực tế:
 
 ```rust
 let x: u8 = value.try_into().map_err(|_| "out of range")?;
@@ -140,7 +136,7 @@ let x: u8 = value.try_into().map_err(|_| "out of range")?;
 
 ### Tuple
 
-Tuple nhóm các kiểu khác nhau:
+Tuple nhóm nhiều giá trị có thể khác kiểu lại với nhau:
 
 ```rust
 let p: (i32, i32) = (10, 20);
@@ -149,13 +145,13 @@ let (x, y) = p;
 
 ### Mảng
 
-Mảng có kích thước cố định và cùng kiểu:
+Mảng có kích thước cố định tại thời điểm biên dịch và mọi phần tử phải cùng kiểu:
 
 ```rust
 let a: [i32; 3] = [1, 2, 3];
 ```
 
-Indexing panic nếu ngoài biên:
+Truy cập phần tử bằng cặp ngoặc vuông `[i]` sẽ gây panic nếu chỉ số vượt quá biên:
 
 ```rust
 let v = vec![1, 2, 3];
@@ -163,18 +159,18 @@ let v = vec![1, 2, 3];
 let maybe = v.get(10);
 ```
 
-Dạy: dùng `.get()` khi chỉ số có thể không hợp lệ.
+Khi chỉ số có khả năng nằm ngoài phạm vi hợp lệ, hãy dùng `.get()` để nhận về `Option`.
 
-## Ví dụ làm việc: mean và variance an toàn
+## Ví dụ thực hành: tính mean và variance an toàn
 
-Ta sẽ tính mean và phương sai (population) cho input `u64`. Ta muốn:
+Ta xây dựng hai hàm tính giá trị trung bình (mean) và phương sai tổng thể (population variance) cho lát cắt đầu vào `&[u64]`, đáp ứng hai yêu cầu:
 
-- không overflow số nguyên khi cộng
-- ổn định số học ở mức hợp lý
+- Tránh tràn số nguyên khi tính tổng.
+- Đảm bảo độ ổn định số học ở mức hợp lý.
 
-### Mean
+### Giá trị trung bình (`mean`)
 
-Dùng `u128` cho tổng trung gian để giảm rủi ro overflow:
+Dùng `u128` cho biến tổng trung gian để giảm thiểu nguy cơ tràn số:
 
 ```rust
 pub fn mean(xs: &[u64]) -> Option<f64> {
@@ -188,14 +184,14 @@ pub fn mean(xs: &[u64]) -> Option<f64> {
 }
 ```
 
-Điểm giảng:
+Các điểm cần lưu ý:
 
-- Trả `Option` nói rằng "mean không xác định với input rỗng".
-- Chỉ cast sau khi đã cộng ở kiểu rộng hơn.
+- Trả về `Option<f64>` thể hiện rõ ràng rằng giá trị trung bình không xác định khi đầu vào rỗng.
+- Chỉ chuyển sang `f64` sau khi đã cộng dồn trên kiểu nguyên rộng hơn (`u128`).
 
-### Variance
+### Phương sai (`variance`)
 
-Một cách ổn định là thuật toán hai lượt:
+Một cách tính ổn định là thuật toán hai lượt duyệt:
 
 ```rust
 pub fn variance(xs: &[u64]) -> Option<f64> {
@@ -212,12 +208,12 @@ pub fn variance(xs: &[u64]) -> Option<f64> {
 }
 ```
 
-Điểm giảng:
+Các điểm cần lưu ý:
 
-- Hai lượt dễ hiểu và đủ ổn định cho nhiều trường hợp.
-- Sau này có thể dạy thuật toán Welford như biến thể streaming, ổn định số học.
+- Cách tính hai lượt dễ hiểu và đủ ổn định cho nhiều bài toán thông thường.
+- Ở mức nâng cao hơn, có thể áp dụng thuật toán Welford để tính phương sai theo luồng (streaming) với độ ổn định số học cao.
 
-## Test (dạy học viên test edge case)
+## Kiểm thử các trường hợp biên
 
 ```rust
 #[test]
@@ -236,24 +232,24 @@ fn variance_zero_for_constant() {
 }
 ```
 
-Nếu so sánh số thực về sau bị nhiễu, hãy giới thiệu so sánh gần đúng. Lúc này giữ các case khớp chính xác.
+Ở ví dụ này, các bộ dữ liệu kiểm thử cho kết quả chính xác nên có thể so sánh trực tiếp bằng `assert_eq!`. Với các phép toán số thực có sai số làm tròn về sau, cần dùng phép so sánh gần đúng với ngưỡng sai số (epsilon).
 
 ## Bài tập
 
-1. Đổi variance thành sample variance (chia cho `n - 1`), trả `None` khi `n < 2`.
-2. Viết mean dạng streaming (cập nhật mean từng giá trị một).
-3. Thêm hàm trả `(min, max)` bằng iterator.
-4. Thay một cast `as` bằng `try_into` và lan truyền thất bại.
+1. Chỉnh sửa hàm `variance` để tính phương sai mẫu (sample variance, chia cho `n - 1`) và trả về `None` khi `n < 2`.
+2. Viết hàm tính giá trị trung bình theo luồng (cập nhật dần khi nhận từng giá trị mới).
+3. Viết thêm hàm trả về `(min, max)` bằng iterator.
+4. Thay một phép ép kiểu `as` bằng `try_into` và lan truyền lỗi nếu chuyển đổi thất bại.
 
 ## Tóm tắt
 
-- Rust không đoán chuyển đổi hộ bạn; hãy tường minh.
-- Tránh `as` thu hẹp trừ khi đã kiểm tra khoảng.
-- Dùng kiểu trung gian rộng hơn để giảm overflow.
-- Ưu tiên `Option`/`Result` để biểu diễn tính toán không xác định hoặc thất bại.
+- Rust không tự động ép kiểu ngầm; mọi chuyển đổi kiểu đều phải tường minh.
+- Tránh dùng `as` để thu hẹp miền giá trị khi chưa kiểm tra biên.
+- Sử dụng kiểu trung gian rộng hơn để giảm nguy cơ tràn số.
+- Ưu tiên `Option` và `Result` để biểu diễn kết quả không xác định hoặc phép tính có thể thất bại.
 
 ## Video tham khảo
 
-- [\[Rust Cơ Bản\] Bài 2: Kiểu dữ liệu cơ bản và biến trong Rust  – Khóa Học Lập Trình Rust Cho Người Mới](https://www.youtube.com/watch?v=CojJ6Sc6LYI) — Vie Lang, tiếng Việt. Xem trước: kiểu dữ liệu cơ bản và biến bằng tiếng Việt, đúng bản đồ kiểu ở đầu bài.
-- [Rust from Zero -- Primitive number types and how to do safe arithmetic (i32, u32, usize, isize, etc)](https://www.youtube.com/watch?v=4w2tRIZbQ7E) — rvne, tiếng Anh. i32, u32, usize, và phép toán có kiểm tra tràn — phần số và an toàn overflow.
-- [Visualizing memory layout of Rust's data types](https://www.youtube.com/watch?v=7_o-YRxf_cc) — Sreekanth, tiếng Anh. Cách số, tuple, và mảng nằm trong bộ nhớ, phía sau bản đồ kiểu.
+- [\[Rust Cơ Bản\] Bài 2: Kiểu dữ liệu cơ bản và biến trong Rust  – Khóa Học Lập Trình Rust Cho Người Mới](https://www.youtube.com/watch?v=CojJ6Sc6LYI) — Vie Lang (tiếng Việt). Nên xem trước: trình bày kiểu dữ liệu cơ bản và biến bằng tiếng Việt, khớp với phần mở đầu bài học.
+- [Rust from Zero -- Primitive number types and how to do safe arithmetic (i32, u32, usize, isize, etc)](https://www.youtube.com/watch?v=4w2tRIZbQ7E) — rvne (tiếng Anh). Giải thích `i32`, `u32`, `usize` và các phép toán có kiểm tra tràn số.
+- [Visualizing memory layout of Rust's data types](https://www.youtube.com/watch?v=7_o-YRxf_cc) — Sreekanth (tiếng Anh). Minh họa cách kiểu số, tuple và mảng được bố trí trong bộ nhớ.

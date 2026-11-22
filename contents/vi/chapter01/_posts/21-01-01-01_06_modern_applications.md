@@ -10,37 +10,37 @@ categories:
 lesson_type: optional
 ---
 
-Bài tùy chọn này không dạy lại `rustup`, Cargo hay module. Nó chỉ ra chỗ những công cụ ấy đang chạy ở quy mô công nghiệp: chỉ mục crates.io kiểu sparse, language server chính thức, toolchain WebAssembly component, và các đợt chuyển edition mà team sản xuất thực sự ship.
+Bài đọc tùy chọn này không lặp lại hướng dẫn cơ bản về `rustup`, Cargo hay module, mà chỉ ra cách chính những công cụ đó vận hành ở quy mô công nghiệp: chỉ mục `crates.io` theo giao thức sparse, máy chủ ngôn ngữ (language server) chính thức, chuỗi công cụ WebAssembly Component Model và các đợt chuyển đổi edition trong môi trường sản xuất.
 
-## Kế hoạch giảng 60 phút
+## Kế hoạch giảng dạy 60 phút
 
-- 0 đến 10 phút: Vì sao tooling *chính là* sản phẩm với shop Rust (phút CI, lockfile, MSRV).
-- 10 đến 25 phút: Sparse index của Cargo (RFC 2789) và đồ thị workspace trong crate lớn.
-- 25 đến 40 phút: rust-analyzer và rustc — hai trình biên dịch, một ngôn ngữ.
-- 40 đến 55 phút: WASM / WASI 0.2 và `wasm-bindgen` như một target thứ hai, không phải đồ chơi.
-- 55 đến 60 phút: Edition 2024 như một cuộc di cư sản xuất, không phải bài blog.
+- 0 đến 10 phút: Vì sao bộ công cụ là yếu tố quyết định với các nhóm kỹ thuật dùng Rust (thời gian CI, tệp khóa `Cargo.lock`, MSRV).
+- 10 đến 25 phút: Giao thức sparse index của Cargo (RFC 2789) và đồ thị workspace trong dự án lớn.
+- 25 đến 40 phút: `rust-analyzer` và `rustc` — hai trình biên dịch cùng phục vụ một ngôn ngữ.
+- 40 đến 55 phút: WASM / WASI 0.2 và `wasm-bindgen` dưới góc nhìn một đích biên dịch (target) thực thụ.
+- 55 đến 60 phút: Edition 2024 dưới góc nhìn một đợt chuyển đổi kỹ thuật trong môi trường sản xuất.
 
-## Mục tiêu
+## Mục tiêu học tập
 
-Sau bài này bạn giải thích được vì sao vòng toolchain Chương 1 — tạo crate, ghim toolchain, thêm dependency, format, lint, test — cũng chính là vòng mà Cloudflare, nhóm rustc và các runtime WASM đang dùng, chỉ khác ở kỷ luật lockfile. Bạn nhận ra giao thức sparse registry, vai trò LSP chính thức của rust-analyzer, và WASI 0.2 như một *target* chọn bằng đúng cử chỉ `rustup target add` đã học. Chuyển mô hình tư duy: từ “công cụ cài để làm bài tập” sang “công cụ chặn cửa các dịch vụ nghìn tỷ request.”
+Sau bài học này, bạn có thể giải thích vì sao quy trình chuỗi công cụ của Chương 1 — tạo crate, cố định toolchain, thêm thư viện phụ thuộc, định dạng, phân tích tĩnh và kiểm thử — cũng chính là quy trình mà các tổ chức như Cloudflare, nhóm phát triển `rustc` và các runtime WASM đang vận hành, chỉ khác ở mức độ kỷ luật với tệp khóa và CI. Bạn cũng sẽ nắm được vai trò của giao thức sparse registry, vị trí LSP chính thức của `rust-analyzer`, và cách xem WASI 0.2 như một *target* được chọn bằng chính lệnh `rustup target add` đã học. Từ đó, bạn chuyển góc nhìn từ "công cụ cài để làm bài tập" sang "công cụ kiểm soát chất lượng cho các dịch vụ quy mô lớn".
 
 ## Điều kiện tiên quyết
 
-Bạn đã xong các bài bắt buộc Chương 1: `rustup`/`cargo` chạy được, crate binary đầu tiên, kiểu nguyên thủy, luồng điều khiển, và tách `lib.rs` + `main.rs`. Không cần async, unsafe hay WASM. Đọc được `Cargo.toml` và một file CI YAML là đủ.
+Bạn đã hoàn thành các bài bắt buộc của Chương 1: cài đặt và chạy được `rustup`/`cargo`, tạo binary crate đầu tiên, nắm kiểu nguyên thủy, luồng điều khiển và cách tách `lib.rs` với `main.rs`. Bài này không yêu cầu kiến thức về `async`, `unsafe` hay lập trình WASM chuyên sâu; chỉ cần đọc hiểu được `Cargo.toml` và một tệp cấu hình CI dạng YAML là đủ.
 
 ## Giới thiệu
 
-Từ 2018 đến khoảng 2021, “Rust trong sản xuất” thường nghĩa là một service hoặc một hot path viết lại. Giữa 2022 và 2026 nút thắt đổi chỗ. Team không còn hỏi rustc có phát ra mã nhanh không; họ hỏi *workspace* có clone, index, lint và ship được trên laptop, trên CI, và lên `wasm32-wasip2` mà không cần toolchain tự chế hay không. Chỉ mục git cũ của Cargo cho crates.io thành bài toán quy mô. rust-analyzer thành compiler mặc định cho công việc tương tác. WebAssembly hết là target demo và có ABI component.
+Giai đoạn 2018–2021, "dùng Rust trong sản xuất" thường gắn với việc viết lại một dịch vụ đơn lẻ hoặc một đoạn mã nhạy cảm về hiệu năng. Sang giai đoạn 2022–2026, bài toán trọng tâm đã dịch chuyển: các nhóm kỹ thuật không còn băn khoăn liệu `rustc` có sinh mã đủ nhanh hay không, mà quan tâm liệu một *workspace* lớn có thể clone, lập chỉ mục, chạy lint và phát hành ổn định trên máy cá nhân, trên CI lẫn lên đích `wasm32-wasip2` mà không cần tự chế công cụ hay không. Chỉ mục Git truyền thống của Cargo cho `crates.io` trở thành điểm nghẽn về quy mô; `rust-analyzer` trở thành trình biên dịch mặc định cho trải nghiệm tương tác; còn WebAssembly vượt qua giai đoạn thử nghiệm để định hình chuẩn ABI hướng thành phần (Component Model).
 
-Shop C/C++ vẫn coi compiler, trình quản lý gói và language server là ba nhà cung cấp. Cược bất thường của Rust là chúng là một sản phẩm. Bài này lần theo cược đó vào các hệ thống bạn bấm được hôm nay.
+Trong hệ sinh thái C/C++, trình biên dịch, trình quản lý gói và máy chủ ngôn ngữ thường do các bên khác nhau phát triển rời rạc. Lựa chọn khác biệt của Rust là xây dựng cả ba như một hệ sinh thái thống nhất. Bài học này lần theo lựa chọn đó trong các hệ thống thực tế hiện nay.
 
 ## Khái niệm cốt lõi
 
-### Sparse index là giao thức sản xuất, không phải cờ tiện lợi
+### Sparse index là giao thức sản xuất, không chỉ là tùy chọn tiện lợi
 
-Đến 2023, Cargo biết crates.io bằng cách clone một kho git khổng lồ chứa file index. RFC 2789 (“Sparse HTTP protocol for Cargo”) thay bằng HTTP GET *chỉ những crate bạn phụ thuộc*. Rust 1.68 (tháng 3/2023) ổn định giao thức; Rust 1.70 (tháng 6/2023) đặt `sparse` làm mặc định cho crates.io. Bài Inside Rust kêu gọi cộng đồng thử `CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse` với `https://index.crates.io/`.
+Cho đến năm 2023, Cargo cập nhật thông tin từ `crates.io` bằng cách clone toàn bộ một kho Git rất lớn chứa chỉ mục gói. RFC 2789 (*Sparse HTTP protocol for Cargo*) thay thế cơ chế này bằng các yêu cầu HTTP GET *chỉ tải thông tin của những crate mà dự án thực sự phụ thuộc*. Rust 1.68 (tháng 3/2023) ổn định giao thức này, và Rust 1.70 (tháng 6/2023) đặt `sparse` làm mặc định cho `crates.io`. Bài thông báo trên Inside Rust trước đó đã kêu gọi cộng đồng thử nghiệm biến môi trường `CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse` với `https://index.crates.io/`.
 
-Thay đổi ấy vô hình trong repo bài tập mười crate và quyết định trong workspace 400 crate. Nó cũng nhắc rằng **Cargo là chương trình hệ thống có mạng**: HTTP/2, cache và hash lockfile cũng “Rust” không kém `let`.
+Thay đổi này gần như khó nhận thấy ở một dự án bài tập có mười crate, nhưng lại tạo khác biệt lớn trong một workspace gồm 400 crate. Điều này cũng cho thấy **Cargo là một phần mềm hệ thống có tương tác mạng**: HTTP/2, cơ chế bộ nhớ đệm và mã băm trong tệp khóa là một phần thiết yếu của hệ sinh thái Rust không kém gì từ khóa `let`.
 
 ```toml
 # Ghim lịch sử — hữu ích khi dạy image CI cũ.
@@ -49,28 +49,28 @@ Thay đổi ấy vô hình trong repo bài tập mười crate và quyết đị
 protocol = "sparse"
 ```
 
-Vì sao dự án tốn một RFC cho cái index? Vì chương trình đầu tiên bạn viết (`cargo new`) cũng là chương trình đầu tiên một cache CDN phải phục vụ cả triệu lần mỗi ngày. Tooling không scale không phải “tooling cho người mới”; đó là hạ tầng hỏng.
+Vì sao cộng đồng phải dành riêng một bản RFC cho chỉ mục gói? Bởi lệnh đầu tiên người mới chạy (`cargo new` và tải dependency) cũng là lưu lượng mà hệ thống CDN phải phục vụ hàng triệu lượt mỗi ngày. Công cụ không mở rộng được về quy mô không đơn thuần là "bất tiện cho người mới", mà là một điểm nghẽn hạ tầng.
 
-### rust-analyzer là rustc thứ hai với ngân sách độ trễ khác
+### `rust-analyzer` là trình biên dịch thứ hai với ngân sách độ trễ khác
 
-`rust-analyzer` là triển khai LSP chính thức. Nó không phải highlighter gắn lên rustc. Nó type-check file chưa hoàn chỉnh, chạy build script, và hiểu workspace — cùng đồ thị module bạn học ở bài 01-05, truy vấn ở độ trễ từng phím. Team sản xuất coi rust-analyzer hỏng như compiler hỏng: nếu IDE không resolve được `crate::auth::Token`, reviewer sẽ không tin thay đổi đó.
+`rust-analyzer` là triển khai chính thức theo giao thức LSP (Language Server Protocol) của Rust, không phải công cụ tô màu cú pháp gắn ngoài lên `rustc`. Nó thực hiện kiểm tra kiểu trên mã nguồn chưa hoàn chỉnh, chạy build script và phân tích đồ thị workspace — chính là đồ thị module bạn học ở bài 01-05 — nhưng phải phản hồi ở mức độ trễ theo từng phím gõ. Trong môi trường sản xuất, `rust-analyzer` gặp sự cố cũng nghiêm trọng như lỗi trình biên dịch: nếu IDE không phân giải được `crate::auth::Token`, người đánh giá mã (reviewer) khó có thể tin tưởng vào thay đổi đó.
 
-Điểm dạy nằm ở kiến trúc. rustc tối ưu *artifact đúng*. rust-analyzer tối ưu *chương trình dở dang*. Cả hai đọc `Cargo.toml`, cả hai tôn trọng edition, cả hai phải hiểu `cfg`. Khi sinh viên nói “compiler chậm,” hãy hỏi *compiler nào* và *đồ thị crate nào*.
+Điểm đáng chú ý nằm ở sự khác biệt kiến trúc: `rustc` tối ưu cho việc tạo ra *tệp biên dịch chính xác*, còn `rust-analyzer` tối ưu cho việc phân tích *chương trình đang viết dở*. Cả hai cùng đọc `Cargo.toml`, cùng tuân thủ `edition` và cùng phải hiểu các cờ biên dịch điều kiện `cfg`. Do đó, khi thấy "trình biên dịch chậm", cần xác định rõ là *trình biên dịch nào* và trên *đồ thị crate nào*.
 
-### WASM là target triple, không phải ngôn ngữ mới
+### WASM là một đích biên dịch (target triple), không phải ngôn ngữ mới
 
-`rustup target add wasm32-unknown-unknown` và gần đây WASI 0.2 (`wasm32-wasip2` cùng Component Model) dùng đúng `cargo build --target` bạn đã chạy cho máy mình. Bytecode Alliance phát hành WASI 0.2 (Preview 2) ngày 25 tháng 1 năm 2024: giao diện WIT cho clock, random, filesystem, socket, CLI và HTTP, đưa WASI khỏi ABI kiểu C sang Component Model. Wasmtime và `jco` là hai triển khai đầu tiên vượt bộ kiểm thử tính di động.
+Lệnh `rustup target add wasm32-unknown-unknown` và gần đây là WASI 0.2 (`wasm32-wasip2` cùng Component Model) sử dụng đúng cơ chế `cargo build --target` như khi biên dịch cho máy cục bộ. Ngày 25 tháng 1 năm 2024, Bytecode Alliance phát hành WASI 0.2 (Preview 2), bổ sung giao diện WIT cho đồng hồ, sinh số ngẫu nhiên, hệ thống tệp, socket, CLI và HTTP, đưa WASI từ mô hình ABI kiểu C sang Component Model. Wasmtime và `jco` là hai triển khai đầu tiên vượt qua bộ kiểm thử tính di động.
 
 ```bash
 rustup target add wasm32-unknown-unknown
 cargo build --target wasm32-unknown-unknown --release
 ```
 
-`wasm-bindgen` và `wasm-pack` nằm *trên* target đó: chúng sinh glue JS, không phải hệ kiểu thứ hai. Ý Chương 1 “crate là đơn vị biên dịch có target” chính là lý do Rust thành ngôn ngữ mặc định của runtime WASM nghiêm túc (Wasmtime, WasmEdge, wasmCloud). Bạn không học ngôn ngữ mới; bạn chọn backend.
+`wasm-bindgen` và `wasm-pack` hoạt động *trên* đích biên dịch đó: chúng sinh mã cầu nối JavaScript, chứ không tạo ra một hệ thống kiểu riêng biệt. Nguyên lý ở Chương 1 — "crate là đơn vị biên dịch gắn với một target" — giải thích vì sao Rust trở thành ngôn ngữ phổ biến cho các runtime WASM như Wasmtime, WasmEdge hay wasmCloud. Bạn không học một ngôn ngữ mới, mà chỉ chọn một đích biên dịch khác.
 
-### Edition là cuộc di cư sản xuất
+### Edition là một đợt chuyển đổi có kỷ luật trong sản xuất
 
-Edition 2024 đi cùng Rust 1.85 ngày 20 tháng 2 năm 2025 (RFC 3501). Đây là edition lớn nhất từ trước: thêm prelude (`Future`, `IntoFuture`), một số API môi trường thành `unsafe`, và chỉnh thứ tự drop. Team sản xuất không “nâng Rust” bằng một tweet; họ đổi `edition = "2024"` trong `Cargo.toml`, chạy `cargo fix --edition`, và ghim MSRV trên CI.
+Edition 2024 ra mắt cùng Rust 1.85 vào ngày 20 tháng 2 năm 2025 (RFC 3501). Đây là phiên bản edition có phạm vi thay đổi lớn nhất từ trước đến nay: bổ sung `Future` và `IntoFuture` vào prelude, đánh dấu một số API môi trường là `unsafe`, và điều chỉnh thứ tự giải phóng (drop order). Trong thực tế sản xuất, các nhóm kỹ thuật không nâng cấp cảm tính mà cập nhật `edition = "2024"` trong `Cargo.toml`, chạy `cargo fix --edition` và cố định phiên bản Rust tối thiểu được hỗ trợ (MSRV) trên CI.
 
 ```toml
 [package]
@@ -80,13 +80,13 @@ edition = "2024"
 rust-version = "1.85"
 ```
 
-Trường `rust-version` là cách crate nói với Cargo “đừng cố biên dịch tôi trên 1.76.” Đó là đúng bản năng ghim bạn luyện với `rustup show`, áp lên cả đội máy.
+Trường `rust-version` báo cho Cargo biết không nên biên dịch crate này trên các bản Rust cũ hơn (chẳng hạn 1.76). Đây chính là nguyên tắc cố định phiên bản bạn đã làm quen với `rustup show`, được mở rộng cho toàn bộ hệ thống máy chủ build.
 
-## Walkthrough mã
+## Minh họa từng bước qua mã nguồn
 
-Bắt đầu từ crate bạn đã biết cách tạo, rồi lớn lên theo kiểu repo service 2024 — không bịa thêm tính năng ngôn ngữ.
+Ta bắt đầu từ một crate cơ bản như đã học, sau đó mở rộng dần theo cấu trúc kho mã nguồn dịch vụ hiện đại mà không cần thêm tính năng ngôn ngữ nâng cao.
 
-### Ngây thơ: một binary “chỉ cần build được”
+### Mức cơ bản: một binary "chỉ cần biên dịch được"
 
 ```rust
 // src/main.rs
@@ -103,9 +103,9 @@ version = "0.1.0"
 edition = "2021"
 ```
 
-Nó biên dịch. Nó chẳng dạy gì về cách Tokio, rustc hay Wasmtime thực sự sống. Lỗi sản xuất đầu tiên không phải lỗi kiểu; đó là “CI dùng toolchain khác laptop.”
+Dự án này biên dịch thành công, nhưng chưa phản ánh cách các dự án lớn như Tokio, `rustc` hay Wasmtime vận hành. Sự cố thực tế đầu tiên thường không phải lỗi kiểu dữ liệu, mà là sự lệch phiên bản: "CI dùng toolchain khác máy cá nhân".
 
-### Sửa theo compiler: ghim toolchain trong repo
+### Khắc phục lệch môi trường: cố định toolchain ngay trong kho mã nguồn
 
 ```toml
 # rust-toolchain.toml  (commit cạnh Cargo.toml)
@@ -115,11 +115,11 @@ components = ["rustfmt", "clippy", "rust-analyzer"]
 targets = ["wasm32-unknown-unknown"]
 ```
 
-`rustup` đọc file này khi bạn `cd` vào repo. Đó là mô hình Chương 1 — rustup quản lý toolchain — áp cho cả nhóm. Nếu `cargo --version` của bạn khác CI, file này là hợp đồng.
+`rustup` tự động đọc tệp này khi bạn di chuyển vào thư mục dự án. Đây là cách mở rộng mô hình quản lý toolchain của Chương 1 cho cả nhóm phát triển: nếu `cargo --version` trên máy cá nhân khác với CI, tệp này đóng vai trò cam kết chung.
 
-Lỗi phổ biến thứ hai: “máy tôi chạy vì index git còn cũ.” Trên image trước 1.70 bạn sẽ thấy dòng `Updating crates.io index` kéo vài phút. Giao thức sparse biến nó thành vài HTTP GET. Sinh viên cần *gọi tên* được giao thức, không chỉ ngồi chờ.
+Sự cố phổ biến thứ hai thường gặp trên các image CI cũ (trước Rust 1.70) là bước `Updating crates.io index` kéo dài hàng phút do dùng chỉ mục Git. Giao thức sparse rút ngắn thao tác này xuống chỉ còn vài yêu cầu HTTP GET. Hiểu rõ cơ chế này giúp bạn chẩn đoán đúng nguyên nhân thay vì chỉ chờ đợi bị động.
 
-### Idiomatic: workspace + thư viện + hai target
+### Cấu trúc chuẩn mực: workspace kết hợp thư viện dùng chung và hai đích biên dịch
 
 ```text
 edge-filter/
@@ -159,17 +159,17 @@ mod tests {
 }
 ```
 
-Crate CLI phụ thuộc `filter-core` và giữ mỏng — đúng thiết kế 01-05. Crate WASM *cũng* phụ thuộc `filter-core` và biên dịch bằng `--target wasm32-unknown-unknown`. Một đồ thị module, hai artifact. Đó là cấu trúc của dự án wasm-bindgen, Cloudflare Workers (`workers-rs`) và ví dụ Wasmtime.
+Crate CLI phụ thuộc vào `filter-core` và giữ lớp vỏ mỏng — đúng thiết kế ở bài 01-05. Crate WASM *cũng* phụ thuộc vào `filter-core` và được biên dịch với cờ `--target wasm32-unknown-unknown`. Một đồ thị module duy nhất tạo ra hai sản phẩm biên dịch khác nhau. Đây là cấu trúc quen thuộc trong các dự án `wasm-bindgen`, Cloudflare Workers (`workers-rs`) và các ví dụ của Wasmtime.
 
-Nếu bạn thêm dependency mà không nghĩ, Clippy và `cargo deny` sẽ là giáo viên tiếp theo. `cargo-deny` (Embark Studios) và `cargo-audit` (Rust Secure Code WG) là cách CI sản xuất từ chối crate bị yank và advisory RustSec. Chúng không phải tính năng ngôn ngữ; chúng là *phần còn lại của vòng toolchain* bạn bắt đầu ở 01-01.
+Khi số lượng thư viện phụ thuộc tăng lên, bên cạnh Clippy, các công cụ như `cargo-deny` (do Embark Studios phát triển) và `cargo-audit` (của Rust Secure Code Working Group) thường được tích hợp vào CI để tự động chặn các crate đã bị thu hồi (yanked) hoặc có cảnh báo bảo mật từ RustSec. Chúng không phải tính năng ngôn ngữ mà là phần mở rộng tự nhiên của quy trình công cụ từ bài 01-01.
 
-## Ví dụ
+## Ví dụ thực tế
 
-### Ví dụ 1 — crates.io như hệ phân tán
+### Ví dụ 1 — `crates.io` dưới góc nhìn hệ phân tán
 
-Sparse index crates.io (`https://index.crates.io/`) là dịch vụ HTTP sản xuất. Cargo là client. Khi bạn viết `serde = "1"` bạn đang gửi truy vấn phân giải phiên bản tới registry phải khớp `Cargo.lock`. RFC 2789 tồn tại vì mô hình clone git cũ không chịu nổi đồ thị crate năm 2023.
+Chỉ mục sparse của `crates.io` (`https://index.crates.io/`) là một dịch vụ HTTP vận hành thực tế, còn Cargo đóng vai trò client. Khi bạn khai báo `serde = "1"`, Cargo gửi truy vấn phân giải phiên bản tới registry và đối chiếu với `Cargo.lock`. RFC 2789 ra đời vì mô hình clone Git truyền thống không còn đáp ứng được quy mô đồ thị crate vào năm 2023.
 
-Đọc lockfile như một artifact hệ thống:
+Quan sát một mục trong `Cargo.lock` như một cấu phần hệ thống:
 
 ```toml
 [[package]]
@@ -179,17 +179,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "..."
 ```
 
-`checksum` là lý do `cargo install` ở hai lục địa ra cùng byte. Bước “thêm dependency” của Chương 1 là fetch theo địa chỉ nội dung. Sửa lockfile bằng tay như sửa binary bằng tay.
+Trường `checksum` đảm bảo quá trình tải và cài đặt ở các vị trí địa lý khác nhau đều thu về cùng một nội dung byte. Bước "thêm dependency" ở Chương 1 thực chất là cơ chế tải dữ liệu có xác thực theo mã băm nội dung; vì vậy không nên chỉnh sửa thủ công tệp `Cargo.lock`.
 
-### Ví dụ 2 — rustc và rust-analyzer trên cùng workspace
+### Ví dụ 2 — `rustc` và `rust-analyzer` trên cùng một workspace
 
-Trình biên dịch Rust tự nó là workspace Cargo hàng trăm crate (`compiler/`, `library/`, `src/tools/`). rust-analyzer phải nạp *một phần* đồ thị đó khi bạn nhảy tới định nghĩa trong rustc. Tokio, Wasmtime và Zed cũng vậy. Nếu bản đồ module 01-05 của bạn bừa — `pub use` đại trà, module vòng, `lib.rs` 4.000 dòng — cả hai compiler đều trả giá mỗi lần gõ phím.
+Bản thân trình biên dịch Rust là một Cargo workspace gồm hàng trăm crate (`compiler/`, `library/`, `src/tools/`). Khi bạn nhảy đến một định nghĩa bên trong `rustc`, `rust-analyzer` phải nạp *một phần* đồ thị phụ thuộc đó. Điều tương tự cũng diễn ra với Tokio, Wasmtime và trình soạn thảo Zed. Nếu cấu trúc module học ở bài 01-05 bị tổ chức thiếu kỷ luật — chẳng hạn `pub use` tràn lan, phụ thuộc vòng hoặc dồn 4.000 dòng mã vào một tệp `lib.rs` — cả hai trình biên dịch đều phải gánh chi phí phân tích lớn sau mỗi lần chỉnh sửa.
 
-Bài tập hữu ích: mở một crate tầm trung bạn đang phụ thuộc (`grep serde Cargo.lock`) và chạy `cargo metadata --no-deps --format-version 1 | head`. JSON đó là bản đồ module/crate mà công cụ chia sẻ. Đồ thị build sản xuất không bí ẩn; đó là `cargo metadata` ở quy mô lớn.
+Một bài tập trực quan là mở một crate quen thuộc trong `Cargo.lock` (`grep serde Cargo.lock`) rồi chạy `cargo metadata --no-deps --format-version 1 | head`. Dữ liệu JSON trả về chính là bản đồ module và crate mà các công cụ dùng chung. Đồ thị build trong sản xuất thực chất chỉ là `cargo metadata` ở quy mô lớn hơn.
 
-### Ví dụ 3 — WASI 0.2 như “HĐH” thứ hai
+### Ví dụ 3 — WASI 0.2 như một "hệ điều hành" thứ hai
 
-WASI 0.2 là tập world WIT: `wasi:cli/command`, `wasi:http/proxy`, và các world khác. Crate Rust nhắm WASI vẫn là crate. Thứ đổi là *mặt syscall*: thay libc, bạn import giao diện component. Wasmtime (Bytecode Alliance) triển khai các import đó bằng Rust. Host là chương trình Rust; guest có thể là Rust, JS (`jco`) hoặc C.
+WASI 0.2 định nghĩa tập hợp các giao diện (world) bằng WIT như `wasi:cli/command` hay `wasi:http/proxy`. Một crate Rust biên dịch cho WASI vẫn giữ nguyên cấu trúc crate; điểm thay đổi nằm ở *bề mặt lời gọi hệ thống (syscall)*: thay vì gọi qua `libc`, chương trình nhập các giao diện của Component Model. Wasmtime (Bytecode Alliance) triển khai các giao diện phía máy chủ (host) bằng Rust, trong khi mã khách (guest) có thể viết bằng Rust, JavaScript (`jco`) hoặc C.
 
 ```rust
 // Tư duy phía guest: bạn vẫn sở hữu main, chỉ link std khác.
@@ -199,35 +199,32 @@ fn main() {
 }
 ```
 
-Câu hỏi phản tư: nếu module WASM không chia sẻ linear memory như file `.so` của C, ý tưởng nào ở Chương 1 vừa cứu bạn khỏi một lớp lỗi FFI? (Trả lời: biên giới crate cộng ABI có kiểu, thay vì “cầm lấy `char*`.”)
+Câu hỏi suy ngẫm: khi module WASM không chia sẻ trực tiếp vùng nhớ tuyến tính (linear memory) như tệp thư viện động `.so` của C, ý tưởng nào từ Chương 1 giúp hạn chế một nhóm lớn lỗi FFI? (Gợi ý: ranh giới crate rõ ràng kết hợp với ABI có kiểm tra kiểu, thay vì truyền con trỏ thô `char*`).
 
 ## Ứng dụng trong lập trình hệ thống
 
-**CI như trang trại compiler.** rustc, Clippy, rustfmt và rust-analyzer được cài bằng cùng `rust-toolchain.toml` trên GitHub Actions, Buildkite và máy local. Team bỏ qua việc ghim sẽ mất tuần đuổi “chạy trên 1.82 / gãy trên 1.85.”
+- **CI như hệ thống biên dịch tập trung:** `rustc`, Clippy, `rustfmt` và `rust-analyzer` được đồng bộ qua cùng một tệp `rust-toolchain.toml` trên GitHub Actions, Buildkite và máy cá nhân. Nhờ đó, nhóm phát triển tránh được tình trạng mã biên dịch được trên phiên bản cũ (như 1.82) nhưng lỗi trên phiên bản mới (như 1.85).
+- **Kiểm soát chuỗi cung ứng:** Lệnh `cargo deny check advisories bans licenses sources` được nhiều tổ chức sử dụng trong giai đoạn 2024–2026 để kiểm tra tự động trước khi hợp nhất mã (merge). Nó bổ sung bước thứ tư vào quy trình chất lượng của Chương 1: định dạng, phân tích tĩnh, kiểm thử và *kiểm tra chính sách*.
+- **Sản phẩm đa đích biên dịch:** Biên dịch cùng một thư viện lọc cho cả `x86_64-unknown-linux-gnu` và `wasm32-wasip2` giúp edge worker và công cụ CLI quản trị dùng chung một nguồn mã. Việc làm chủ *cấu hình build* trở nên quan trọng không kém việc nắm vững các kiểu dữ liệu cơ bản.
+- **Máy chủ ngôn ngữ là hạ tầng phát triển:** Các trình soạn thảo như Zed, VS Code và Helix đều giao tiếp LSP với `rust-analyzer`. Khi `rust-analyzer` gặp sự cố do `build.rs` cấu hình sai (ví dụ dò nhầm `web-sys`), năng suất của cả nhóm bị gián đoạn ngay cả khi dịch vụ không gặp lỗi runtime.
 
-**Chính sách chuỗi cung ứng.** `cargo deny check advisories bans licenses sources` là cách nhiều công ty 2024–2026 chặn merge. Nó ngồi cạnh `cargo test`, không thay thế. Vòng chất lượng Chương 1 thêm bước thứ tư: format, lint, test, *policy*.
+## Thách thức và hướng mở rộng
 
-**Sản phẩm đa target.** Thư viện lọc biên dịch cho `x86_64-unknown-linux-gnu` và `wasm32-wasip2` là cách edge worker và CLI admin dùng chung mã. Sở hữu *cấu hình build* trở nên quan trọng không kém sở hữu `String`.
+Bộ phân giải phiên bản (resolver) của Cargo, cơ chế hợp nhất feature (feature unification) và phân giải phụ thuộc có xét đến MSRV (phát triển mạnh trong giai đoạn 2024–2025) là những vấn đề thường gặp tiếp theo sau khi chương trình đã biên dịch được. Một workspace có các feature tùy chọn có thể vô tình kéo theo hai phiên bản khác nhau của cùng một crate; lệnh `cargo tree -d` giúp phát hiện nhanh tình trạng này.
 
-**Language server như hạ tầng sản xuất.** Zed, VS Code và Helix đều nói LSP với rust-analyzer. Khi rust-analyzer lỗi vì `build.rs` dò `web-sys`, cả team mất một buổi chiều. Đó là sự cố hệ thống không có mã HTTP.
+Hệ sinh thái WASM hiện vẫn tồn tại hai hướng ứng dụng chính: `wasm32-unknown-unknown` kết hợp `wasm-bindgen` cho trình duyệt, và mô hình thành phần WASI 0.2 cho phía máy chủ. Chọn nhầm đích biên dịch cũng tương tự như liên kết nhầm `libc` trong lập trình hệ thống truyền thống.
 
-## Thách thức và mở rộng
+Với Edition 2024, một số API trong `std::env` được chuyển sang `unsafe` vì việc thay đổi biến môi trường ở cấp toàn tiến trình vốn không an toàn trong môi trường đa luồng. Quá trình nâng cấp edition vì thế không chỉ là bài toán kỹ thuật mà còn là bài toán *phối hợp cộng đồng*, đòi hỏi các crate trong cùng đồ thị phụ thuộc tương thích với nhau.
 
-Resolver của Cargo, thống nhất feature, và phân giải theo MSRV (công việc resolver nhận biết MSRV trong 2024–2025) là lớp tiếp theo sau “biên dịch được.” Workspace có feature tùy chọn có thể kéo hai phiên bản cùng crate; `cargo tree -d` là chẩn đoán.
-
-WASM vẫn hai nhân cách: `wasm32-unknown-unknown` + `wasm-bindgen` cho trình duyệt, versus component WASI 0.2 cho server. Chọn sai target là “libc sai” phiên bản mới.
-
-Edition 2024 biến một số API `std::env` thành `unsafe` vì mutation toàn cục tiến trình chưa bao giờ thực sự an toàn. Di cư là bài toán *xã hội*: mọi crate trong đồ thị phải đồng ý.
-
-Hãy nghĩ: nếu bạn thiết kế cache artifact đã biên dịch (`sccache`, `cargo-cache`) cho tổ chức 200 lập trình viên, bạn sẽ khóa theo đối tượng nào của Chương 1 — hash toolchain, target triple, digest `Cargo.lock`, hay cả ba?
+Câu hỏi mở: nếu bạn thiết kế hệ thống lưu đệm tệp biên dịch (`sccache`, `cargo-cache`) cho một tổ chức 200 lập trình viên, bạn sẽ chọn khóa bộ nhớ đệm dựa trên yếu tố nào đã học ở Chương 1 — mã băm của toolchain, `target triple`, mã băm của `Cargo.lock`, hay kết hợp cả ba?
 
 ## Bài tập
 
-1. **Suy luận.** Giải thích trong bốn câu vì sao RFC 2789 tồn tại. Chỉ mục git đang lãng phí tài nguyên gì, và ai trả giá tài nguyên đó trên CI?
-2. **Sửa mã.** Lấy crate `hello-cli` Chương 1, thêm `rust-toolchain.toml` ghim một bản stable cụ thể, và trường `rust-version`. Xác nhận `rustup show` khớp `cargo --version`.
-3. **Metadata.** Chạy `cargo metadata --format-version 1` và chỉ ra id crate, edition, và thư mục target. Phác đồ thị crate trên giấy.
-4. **Target thứ hai.** Thêm `wasm32-unknown-unknown`, build crate thư viện cho target đó, và ghi lại đường dẫn artifact dưới `target/wasm32-unknown-unknown/`. Artifact đó *thiếu* gì so với binary native?
-5. **Cài đặt.** Tách `hello-cli` thành workspace (`core` + `cli`) theo 01-05, rồi thêm crate `wasm` rỗng phụ thuộc `core`. Không viết lại lý thuyết — chỉ đồ thị gói.
+1. **Phân tích:** Giải thích trong khoảng bốn câu vì sao RFC 2789 ra đời. Mô hình chỉ mục Git cũ đã gây lãng phí tài nguyên gì, và chi phí đó ảnh hưởng trực tiếp đến khâu nào trên CI?
+2. **Cấu hình dự án:** Lấy crate `hello-cli` từ Chương 1, bổ sung tệp `rust-toolchain.toml` cố định một phiên bản `stable` cụ thể và khai báo trường `rust-version` trong `Cargo.toml`. Xác nhận kết quả `rustup show` khớp với `cargo --version`.
+3. **Đọc siêu dữ liệu:** Chạy `cargo metadata --format-version 1`, xác định mã định danh (id) của crate, `edition` và thư mục `target`, sau đó phác thảo đồ thị crate trên giấy.
+4. **Đích biên dịch thứ hai:** Cài thêm target `wasm32-unknown-unknown`, biên dịch một library crate cho target đó và ghi nhận đường dẫn tệp kết quả dưới `target/wasm32-unknown-unknown/`. Tệp này *thiếu* những thành phần gì so với tệp nhị phân native?
+5. **Tổ chức workspace:** Tách `hello-cli` thành một workspace gồm `core` và `cli` theo bài 01-05, rồi thêm một crate `wasm` rỗng phụ thuộc vào `core` để quan sát cấu trúc đồ thị gói.
 
 ## Tài liệu tham khảo
 
@@ -236,18 +233,18 @@ Hãy nghĩ: nếu bạn thiết kế cache artifact đã biên dịch (`sccache`
 - [Announcing Rust 1.85.0 and Rust 2024](https://blog.rust-lang.org/2025/02/20/Rust-1.85.0/) — Edition 2024 (RFC 3501).
 - [WASI 0.2 Launched](https://bytecodealliance.org/articles/WASI-0.2) — Bytecode Alliance, 25 tháng 1 năm 2024.
 - [The Cargo Book — Registry Index](https://doc.rust-lang.org/cargo/reference/registry-index.html) — giao thức git và sparse.
-- [rust-analyzer manual](https://rust-analyzer.github.io/) — LSP chính thức.
+- [rust-analyzer manual](https://rust-analyzer.github.io/) — tài liệu LSP chính thức.
 
 ## Tóm tắt
 
-- Vòng Chương 1 chính là vòng sản xuất: ghim toolchain, phân giải đồ thị, biên dịch target, test.
-- crates.io sparse (2023) là Cargo đóng vai client hệ thống có mạng.
-- rust-analyzer là compiler thứ hai với ngân sách độ trễ; hãy coi nó là hạ tầng.
-- WASM/WASI 0.2 là target triple và ABI, không phải ngôn ngữ mới.
-- Edition 2024 là di cư phối hợp, ghi trong `Cargo.toml` và CI, không ghi trên slide.
+- Quy trình học ở Chương 1 cũng là nền tảng của quy trình sản xuất: cố định toolchain, phân giải đồ thị phụ thuộc, biên dịch theo target và kiểm thử.
+- Giao thức sparse trên `crates.io` (2023) cho thấy vai trò của Cargo như một phần mềm hệ thống tương tác mạng.
+- `rust-analyzer` hoạt động như trình biên dịch thứ hai với yêu cầu độ trễ thấp và cần được xem là một phần hạ tầng phát triển.
+- WASM và WASI 0.2 là các đích biên dịch (target triple) và chuẩn ABI, không phải ngôn ngữ lập trình mới.
+- Edition 2024 là một đợt chuyển đổi có phối hợp, được quản lý tường minh qua `Cargo.toml` và hệ thống CI.
 
 ## Video tham khảo
 
-- [The state of WASI support in Rust and WebAssembly toolchain - Michael Yuan](https://www.youtube.com/watch?v=hGcqJ2zrwIY) — RustLab Conference, tiếng Anh. Xem trước: WASI như một target của Cargo — đúng bước toolchain trong bài.
-- [Lin Clark — WebAssembly: Building a new kind of ecosystem](https://www.youtube.com/watch?v=IBZFJzGnBoU) — WebAssembly Summit, tiếng Anh. Lin Clark nói về WebAssembly như một ranh giới hệ sinh thái, không chỉ demo trên trình duyệt.
-- [The Truth about Rust/WebAssembly Performance](https://www.youtube.com/watch?v=4KtotxNAwME) — Greg Johnston, tiếng Anh. Chỗ Rust biên dịch sang WASM nhanh thật và chỗ không, để phần hiệu năng khỏi bị nói quá.
+- [The state of WASI support in Rust and WebAssembly toolchain - Michael Yuan](https://www.youtube.com/watch?v=hGcqJ2zrwIY) — RustLab Conference (tiếng Anh). Nên xem trước: trình bày WASI dưới góc độ một đích biên dịch của Cargo, bám sát phần toolchain trong bài.
+- [Lin Clark — WebAssembly: Building a new kind of ecosystem](https://www.youtube.com/watch?v=IBZFJzGnBoU) — WebAssembly Summit (tiếng Anh). Phân tích vai trò của WebAssembly trong việc kết nối hệ sinh thái phần mềm vượt ra ngoài trình duyệt.
+- [The Truth about Rust/WebAssembly Performance](https://www.youtube.com/watch?v=4KtotxNAwME) — Greg Johnston (tiếng Anh). Đánh giá khách quan những trường hợp Rust biên dịch sang WASM đạt hiệu năng cao và những giới hạn cần lưu ý để tránh phóng đại.

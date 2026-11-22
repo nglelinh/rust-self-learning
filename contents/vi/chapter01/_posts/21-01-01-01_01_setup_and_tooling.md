@@ -10,53 +10,53 @@ categories:
 lesson_type: required
 ---
 
-Lập trình Rust chủ yếu là làm chủ vòng phản hồi: viết code, đọc thông báo của trình biên dịch, rồi chỉnh nhanh. Bài này dựng vòng đó và giải thích vài công cụ bạn sẽ dùng mỗi ngày.
+Học lập trình Rust gắn liền với việc làm chủ vòng lặp phản hồi: viết mã, đọc thông báo của trình biên dịch và điều chỉnh nhanh chóng. Bài học này thiết lập quy trình làm việc đó và giới thiệu các công cụ cốt lõi bạn sẽ sử dụng hằng ngày.
 
-## Kế hoạch giảng 60 phút
+## Kế hoạch giảng dạy 60 phút
 
-- 0 đến 10 phút: Tooling Rust là gì (và không phải là gì). Cài đặt và kiểm tra.
-- 10 đến 25 phút: Nền tảng Cargo: tạo, chạy, build, test.
-- 25 đến 40 phút: Cấu trúc dự án + đọc `Cargo.toml` + hiểu target.
-- 40 đến 50 phút: Vòng chất lượng: `fmt` rồi `clippy`.
-- 50 đến 60 phút: Tài liệu, lệnh help, và checklist ngắn khi build lỗi.
+- 0 đến 10 phút: Giới thiệu phạm vi của bộ công cụ (tooling) Rust; cài đặt và kiểm tra môi trường.
+- 10 đến 25 phút: Nền tảng Cargo: tạo dự án, chạy, biên dịch và kiểm thử.
+- 25 đến 40 phút: Cấu trúc dự án, cách đọc `Cargo.toml` và vai trò của thư mục `target/`.
+- 40 đến 50 phút: Quy trình đảm bảo chất lượng mã nguồn với `cargo fmt` và `cargo clippy`.
+- 50 đến 60 phút: Tra cứu tài liệu, dùng lệnh trợ giúp và danh sách kiểm tra khi gặp lỗi biên dịch.
 
-## Mục tiêu học
+## Mục tiêu học tập
 
-Cuối bài, bạn có thể:
+Sau bài học này, bạn có thể:
 
-- Kiểm tra toolchain Rust hoạt động và giải thích `rustup`, `rustc`, `cargo` làm gì.
-- Tạo một crate, thêm dependency, và chạy local.
-- Dùng vòng làm việc hàng ngày: `cargo fmt` rồi `cargo clippy` rồi `cargo test`.
-- Tìm tài liệu nhanh (stdlib và dependency).
+- Kiểm tra môi trường chuỗi công cụ (toolchain) Rust và giải thích vai trò của `rustup`, `rustc`, `cargo`.
+- Tạo mới một crate, khai báo thư viện phụ thuộc (dependency) và chạy chương trình trên máy cục bộ.
+- Áp dụng quy trình làm việc hằng ngày: `cargo fmt` → `cargo clippy` → `cargo test`.
+- Tra cứu nhanh tài liệu của thư viện chuẩn (stdlib) và các thư viện phụ thuộc.
 
-## Mô hình toolchain (bản đồ tư duy)
+## Mô hình chuỗi công cụ
 
-Tooling Rust tách thành ba lớp:
+Bộ công cụ của Rust được tổ chức thành ba lớp rõ ràng:
 
-- `rustup`: cài và quản lý toolchain (phiên bản Rust và các component).
-- `rustc`: trình biên dịch.
-- `cargo`: hệ thống build + quản lý dependency + runner test.
+- `rustup`: cài đặt và quản lý chuỗi công cụ (các phiên bản Rust và thành phần đi kèm).
+- `rustc`: trình biên dịch Rust.
+- `cargo`: công cụ quản lý build, quản lý thư viện phụ thuộc và chạy kiểm thử.
 
-Thực tế, bạn hầu như chỉ gõ `cargo ...` và để Cargo gọi compiler.
+Trong thực tế làm việc hằng ngày, bạn chủ yếu tương tác qua lệnh `cargo ...`, còn Cargo sẽ tự động gọi trình biên dịch `rustc` ở bên dưới.
 
 ## Cài đặt và kiểm tra
 
-### Xác nhận bạn biên dịch được
+### Xác nhận khả năng biên dịch
 
 ```bash
 rustc --version
 cargo --version
 ```
 
-Kỳ vọng: cả hai in ra phiên bản. Nếu có `rustc` mà không có `cargo`, bản cài chưa đủ.
+Kết quả mong đợi là cả hai lệnh đều in ra số phiên bản. Nếu máy có `rustc` nhưng thiếu `cargo`, bản cài đặt hiện tại chưa đầy đủ.
 
-### Toolchain (vì sao bạn cần quan tâm)
+### Quản lý chuỗi công cụ (toolchain)
 
-Rust ra phiên bản nhanh. Toolchain quan trọng vì:
+Rust phát hành phiên bản mới theo chu kỳ ngắn, nên việc quản lý toolchain rất quan trọng vì các lý do sau:
 
-- Một repo có thể đòi compiler mới hơn.
-- CI thường ghim một phiên bản.
-- Tính năng nightly cần nightly.
+- Một kho mã nguồn có thể yêu cầu phiên bản trình biên dịch mới hơn.
+- Hệ thống CI thường cố định (ghim) một phiên bản cụ thể để đảm bảo tính tái lập.
+- Một số tính năng thử nghiệm chỉ hoạt động trên kênh `nightly`.
 
 Các lệnh `rustup` thường dùng:
 
@@ -66,44 +66,44 @@ rustup update
 rustup toolchain list
 ```
 
-Nếu đang dạy, quy tắc đơn giản nhất: giữ mọi người trên **stable** trừ khi có lý do rõ để lệch.
+Khi học tập hoặc giảng dạy, nguyên tắc đơn giản nhất là giữ toàn bộ môi trường ở kênh **stable**, trừ khi có lý do cụ thể cần chuyển sang kênh khác.
 
 ## Nền tảng Cargo
 
-### Tạo binary crate mới
+### Tạo mới một binary crate
 
 ```bash
 cargo new hello-cli
 cd hello-cli
 ```
 
-Chạy:
+Biên dịch và chạy chương trình:
 
 ```bash
 cargo run
 ```
 
-Build mà không chạy (nhanh hơn khi chỉ cần compile):
+Chỉ biên dịch mà không chạy (nhanh hơn khi chỉ cần kiểm tra quá trình build):
 
 ```bash
 cargo build
 ```
 
-Chạy test:
+Chạy bộ kiểm thử:
 
 ```bash
 cargo test
 ```
 
-### Hiểu cấu trúc vừa được tạo
+### Cấu trúc thư mục vừa tạo
 
-Cargo tạo:
+Cargo tạo sẵn các thành phần cơ bản sau:
 
-- `Cargo.toml`: metadata gói và dependency.
-- `src/main.rs`: điểm vào của binary crate.
-- `target/`: artifact build (thường không commit).
+- `Cargo.toml`: tệp khai báo siêu dữ liệu (metadata) của gói và danh sách thư viện phụ thuộc.
+- `src/main.rs`: điểm khởi đầu của một binary crate.
+- `target/`: thư mục chứa các tệp sinh ra sau quá trình biên dịch (thường không đưa vào Git).
 
-Mở `Cargo.toml` và chỉ ra các trường chính:
+Mở `Cargo.toml` để quan sát các trường chính:
 
 ```toml
 [package]
@@ -114,23 +114,23 @@ edition = "2021"
 [dependencies]
 ```
 
-Ghi chú:
+Lưu ý:
 
-- `edition` đổi mặc định ngôn ngữ và idiom. Hầu hết dự án mới dùng 2021.
-- Dependency được resolve từ `crates.io` theo mặc định.
+- Trường `edition` quy định phiên bản quy ước ngôn ngữ và cú pháp mặc định; phần lớn dự án hiện nay dùng edition `2021` (hoặc `2024` trên các bản Rust mới hơn).
+- Theo mặc định, các thư viện phụ thuộc được phân giải và tải từ `crates.io`.
 
-## Thêm dependency (demo trực tiếp)
+## Thêm thư viện phụ thuộc (minh họa trực tiếp)
 
-Chọn một dependency nhỏ để minh họa. Ví dụ: `anyhow` để xử lý lỗi nhanh.
+Chọn một thư viện nhỏ để minh họa, chẳng hạn `anyhow` giúp xử lý lỗi gọn nhẹ.
 
-Sửa `Cargo.toml`:
+Cập nhật tệp `Cargo.toml`:
 
 ```toml
 [dependencies]
 anyhow = "1"
 ```
 
-Rồi trong `src/main.rs`:
+Chỉnh sửa `src/main.rs`:
 
 ```rust
 use anyhow::Result;
@@ -141,49 +141,49 @@ fn main() -> Result<()> {
 }
 ```
 
-Build và chạy:
+Biên dịch và chạy lại:
 
 ```bash
 cargo run
 ```
 
-Điểm giảng: Cargo sẽ tải, compile, và cache dependency. Lần build thứ hai nhanh hơn nhiều.
+Lưu ý: ở lần chạy đầu tiên, Cargo sẽ tải xuống, biên dịch và lưu vào bộ nhớ đệm (cache) thư viện phụ thuộc. Từ lần build thứ hai trở đi, tốc độ sẽ nhanh hơn đáng kể.
 
-## Vòng chất lượng hàng ngày
+## Quy trình đảm bảo chất lượng hằng ngày
 
-### Format: `cargo fmt`
+### Định dạng mã nguồn: `cargo fmt`
 
-Format Rust đã được chuẩn hóa. Ở hầu hết repo, format không phải chủ đề tranh luận.
+Quy chuẩn định dạng mã nguồn trong Rust đã được thống nhất. Ở hầu hết các dự án, định dạng mã được tự động hóa thay vì tranh luận thủ công.
 
 ```bash
 cargo fmt
 ```
 
-Nếu thiếu `cargo fmt`, cài component:
+Nếu hệ thống chưa có `cargo fmt`, hãy cài đặt thành phần `rustfmt`:
 
 ```bash
 rustup component add rustfmt
 ```
 
-### Lint: `cargo clippy`
+### Phân tích tĩnh (lint): `cargo clippy`
 
-Clippy là linter của Rust: bắt lỗi thường gặp và gợi ý code idiomatic hơn.
+Clippy là công cụ phân tích tĩnh của Rust, giúp phát hiện các lỗi phổ biến và gợi ý cách viết mã đúng chuẩn ngôn ngữ hơn.
 
 ```bash
 cargo clippy
 ```
 
-Nếu thiếu Clippy:
+Nếu chưa cài đặt Clippy:
 
 ```bash
 rustup component add clippy
 ```
 
-Ghi chú giảng viên: dạy học viên **đọc** thông báo clippy, không tắt mặc định.
+Lưu ý: nên đọc kỹ từng cảnh báo của Clippy để hiểu nguyên nhân thay vì tắt cảnh báo theo thói quen.
 
-### Thứ tự nên dùng
+### Thứ tự thực hiện khuyến nghị
 
-Để vòng phản hồi gọn:
+Để giữ vòng phản hồi gọn gàng và nhất quán, hãy chạy theo thứ tự sau:
 
 ```bash
 cargo fmt
@@ -191,19 +191,19 @@ cargo clippy
 cargo test
 ```
 
-Nhiều pipeline CI nghĩ theo đúng thứ tự này: style, kiểm tra tĩnh, rồi tính đúng.
+Nhiều hệ thống CI cũng vận hành theo đúng trình tự này: kiểm tra định dạng, phân tích tĩnh, rồi mới xác minh tính đúng đắn qua kiểm thử.
 
-## Tài liệu và help (cách tự gỡ tắc)
+## Tra cứu tài liệu và trợ giúp
 
-### Docs có sẵn
+### Tạo tài liệu cục bộ
 
 ```bash
 cargo doc --open
 ```
 
-Lệnh này sinh tài liệu local cho crate của bạn và các dependency.
+Lệnh này tạo và mở tài liệu HTML cục bộ cho chính crate của bạn cùng toàn bộ các thư viện phụ thuộc đang sử dụng.
 
-### Mẫu help nhanh
+### Các lệnh trợ giúp nhanh
 
 ```bash
 cargo --help
@@ -211,33 +211,33 @@ cargo test --help
 rustc --explain E0382
 ```
 
-Lệnh cuối (`rustc --explain ...`) là một trong những cách học Rust tốt nhất. Thấy mã lỗi thì giải thích mã đó.
+Lệnh `rustc --explain <mã_lỗi>` là một trong những cách tự học Rust hiệu quả nhất: mỗi khi gặp mã lỗi biên dịch, bạn có thể tra trực tiếp lời giải thích chi tiết và ví dụ minh họa ngay trên terminal.
 
-## Sự cố thường gặp và cách gỡ
+## Sự cố thường gặp và cách xử lý
 
-### 1. Máy mình build được, CI thì không
+### 1. Máy cục bộ biên dịch thành công nhưng CI báo lỗi
 
-Nguyên nhân điển hình:
+Các nguyên nhân phổ biến gồm:
 
-- Khác phiên bản toolchain.
-- Dựa vào hành vi riêng của nền tảng.
-- Thiếu feature của dependency.
+- Khác biệt phiên bản toolchain giữa máy cục bộ và CI.
+- Mã nguồn phụ thuộc vào hành vi đặc thù của hệ điều hành.
+- Thiếu feature cần thiết của một thư viện phụ thuộc.
 
-Việc cần làm: so `rustc --version` local với CI. Chỉ `cargo clean` khi nghi artifact cũ thật sự.
+Cách xử lý: đối chiếu kết quả `rustc --version` trên máy cục bộ với môi trường CI. Chỉ chạy `cargo clean` khi có cơ sở nghi ngờ tệp build cũ bị hỏng.
 
-### 2. Rối dependency
+### 2. Lỗi khi khai báo thư viện phụ thuộc
 
-Nếu thêm dependency thất bại:
+Nếu bước thêm dependency thất bại:
 
-- Kiểm tra bạn sửa đúng section `[dependencies]`.
-- Chạy `cargo build -vv` để thấy chi tiết hơn.
+- Kiểm tra xem khai báo đã đặt đúng trong mục `[dependencies]` hay chưa.
+- Chạy `cargo build -vv` để xem thông tin nhật ký chi tiết hơn.
 
-### 3. Build chậm
+### 3. Thời gian biên dịch chậm
 
-Dạy phần cơ bản:
+Một số nguyên tắc cơ bản cần nắm:
 
-- Lần build đầu chậm, các lần sau incremental.
-- `cargo check` nhanh hơn `cargo build` khi bạn chỉ cần type check.
+- Lần biên dịch đầu tiên thường mất thời gian hơn; các lần sau được tăng tốc nhờ biên dịch gia tăng (incremental compilation).
+- Khi chỉ cần kiểm tra kiểu dữ liệu và lỗi biên dịch mà chưa cần tạo tệp thực thi, hãy dùng `cargo check` thay vì `cargo build`:
 
 ```bash
 cargo check
@@ -245,28 +245,28 @@ cargo check
 
 ## Bài tập trên lớp (10 đến 15 phút)
 
-1. Tạo crate tên `hello-cli`.
-2. Thêm một dependency.
-3. Để `main` trả về `Result`.
-4. Chạy `cargo fmt`, `cargo clippy`, và `cargo test`.
-5. Thêm một unit test (dù tầm thường) rồi chạy lại `cargo test`.
+1. Tạo một crate mới mang tên `hello-cli`.
+2. Thêm một thư viện phụ thuộc vào `Cargo.toml`.
+3. Chỉnh sửa hàm `main` để trả về kiểu `Result`.
+4. Chạy lần lượt `cargo fmt`, `cargo clippy` và `cargo test`.
+5. Viết thêm một bài kiểm thử đơn vị (unit test) đơn giản và chạy lại `cargo test`.
 
-## Bài về nhà
+## Bài tập về nhà
 
-- Tạo crate thứ hai `sandbox` và thử:
+- Tạo crate thứ hai mang tên `sandbox` và thực hành:
   - `cargo doc --open`
   - `cargo check`
-  - `rustc --explain` với một lỗi compiler bạn gặp
+  - `rustc --explain` với một mã lỗi biên dịch mà bạn gặp phải.
 
 ## Tóm tắt
 
-- `rustup` quản lý toolchain.
-- `cargo` là cửa vào hàng ngày.
-- Dùng vòng: format, lint, test.
-- Học cách tự gỡ tắc bằng `--help` và `rustc --explain`.
+- `rustup` quản lý các phiên bản toolchain và thành phần đi kèm.
+- `cargo` là công cụ trung tâm cho công việc hằng ngày.
+- Duy trì quy trình: định dạng (`fmt`), phân tích tĩnh (`clippy`), kiểm thử (`test`).
+- Chủ động tự gỡ lỗi bằng cờ `--help` và lệnh `rustc --explain`.
 
 ## Video tham khảo
 
-- [\[Rust Cơ Bản\] Bài 1: Cài Đặt Ngôn Ngữ Lập Trình Rust  – Khóa Học Lập Trình Rust Cho Người Mới](https://www.youtube.com/watch?v=zEcr5XlOgxE) — Vie Lang, tiếng Việt. Xem trước: cài Rust bằng tiếng Việt, đúng phần rustup và chương trình đầu tiên của bài.
-- [Hướng Dẫn Cài Đặt Môi trường làm việc Cho #RUST](https://www.youtube.com/watch?v=XiS7MB23NoE) — Jayden Dang, tiếng Việt. Dựng môi trường làm việc cho Rust, bổ sung cho bước kiểm tra toolchain.
-- [Rust Installation, Hello World, Hello Cargo -  Full Crash Rust Tutorial for Beginners](https://www.youtube.com/watch?v=R33h77nrMqc) — Francesco Ciulla, tiếng Anh. rustup, Cargo, và vòng sửa-chạy mà bài gọi là công việc hàng ngày.
+- [\[Rust Cơ Bản\] Bài 1: Cài Đặt Ngôn Ngữ Lập Trình Rust  – Khóa Học Lập Trình Rust Cho Người Mới](https://www.youtube.com/watch?v=zEcr5XlOgxE) — Vie Lang (tiếng Việt). Nên xem trước: hướng dẫn cài đặt Rust bằng tiếng Việt, bám sát phần `rustup` và chương trình đầu tiên của bài học.
+- [Hướng Dẫn Cài Đặt Môi trường làm việc Cho #RUST](https://www.youtube.com/watch?v=XiS7MB23NoE) — Jayden Dang (tiếng Việt). Hướng dẫn thiết lập môi trường phát triển Rust, bổ trợ cho bước kiểm tra toolchain.
+- [Rust Installation, Hello World, Hello Cargo -  Full Crash Rust Tutorial for Beginners](https://www.youtube.com/watch?v=R33h77nrMqc) — Francesco Ciulla (tiếng Anh). Trình bày `rustup`, Cargo và vòng lặp chỉnh sửa–chạy thử hằng ngày.
