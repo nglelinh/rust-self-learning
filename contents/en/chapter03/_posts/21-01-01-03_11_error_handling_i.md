@@ -10,7 +10,22 @@ categories:
 lesson_type: required
 ---
 
-Idiomatic Rust error handling is about making failure explicit, keeping errors useful, and making it easy to propagate failures without losing context.
+In languages with unchecked exceptions, a single line like `load_config(path)` hides a minefield: could it throw a file-not-found error, a permission error, a syntax error, or a network timeout? You often don’t know until a stack trace wakes you up at 3 a.m. Rust takes the opposite road: **recoverable failures are ordinary return values (`Result<T, E>`)**—visible right in the function signature, composable with `?`, and exhaustively matchable by callers.
+
+This lecture shows you how to design clean, structured local error enums (wrapping `io::Error` and parse errors), wire automatic error conversion via `From`, and build a real file-based config loader where every failure path is explicit and testable.
+
+---
+
+## Background Knowledge Map: Error-as-Value Architecture in Rust
+
+Four pillars separate mature Rust error handling from ad-hoc string errors:
+
+1. **Errors as Values (`Result<T, E>`):** Because errors flow through normal return channels rather than unwinding hidden exception stacks, control flow stays transparent and predictable—critical for systems code, async tasks, and embedded targets.
+2. **Structured Domain Error Enums:** Instead of flattening every failure into `Result<T, String>`, defining `enum ConfigError { Io(io::Error), MissingKey(String), BadInt(ParseIntError) }` lets callers programmatically branch on *why* something failed (e.g., retry on I/O timeout, fail fast on bad syntax).
+3. **Automatic Conversion via `From` + `?`:** Implementing `From<io::Error> for ConfigError` lets the `?` operator seamlessly lift lower-level library errors into your domain error enum without repetitive `.map_err(...)` boilerplate.
+4. **The `std::error::Error` Trait Ecosystem:** Implementing `Display` + `Debug` + `Error` (or using crates like `thiserror` for libraries and `anyhow` for applications) integrates your custom errors with Rust’s entire logging and reporting ecosystem.
+
+---
 
 ## 60-minute teaching plan
 
@@ -207,6 +222,53 @@ If file IO tests are awkward, factor parsing into `load_config_str(&str)` and te
 1. Returning `String` errors everywhere (hard to match, easy to break).
 2. Losing context (every error becomes "failed").
 3. `unwrap()` on parsing or IO.
+
+---
+
+### Worked Line-by-Line Trace (Error Conversion & `?`): How Two Different Errors Flow Into One `ConfigError`
+
+Trace how `?` converts two completely different error types into a single `ConfigError` enum:
+
+```rust
+use std::io;
+use std::num::ParseIntError;
+
+#[derive(Debug)]
+enum ConfigError {
+    Io(io::Error),
+    Parse(ParseIntError),
+}
+impl From<io::Error> for ConfigError {
+    fn from(e: io::Error) -> Self { Self::Io(e) }
+}
+impl From<ParseIntError> for ConfigError {
+    fn from(e: ParseIntError) -> Self { Self::Parse(e) }
+}
+
+fn load_port(path: &str) -> Result<u16, ConfigError> {
+    let text = std::fs::read_to_string(path)?; // Error type: io::Error -> ConfigError::Io
+    let port = text.trim().parse::<u16>()?;    // Error type: ParseIntError -> ConfigError::Parse
+    Ok(port)
+}
+```
+
+| Runtime Scenario | Failing Line | Raw Error Type | Conversion Triggered by `?` | Returned Value |
+| :--- | :--- | :--- | :--- | :--- |
+| File missing | `read_to_string(path)?` | `io::Error` | `ConfigError::from(io_err)` | `Err(ConfigError::Io(...))` |
+| File contains `"xyz"` | `parse::<u16>()?` | `ParseIntError` | `ConfigError::from(parse_err)` | `Err(ConfigError::Parse(...))` |
+| File contains `"8080
+"` | None | — | Both `?` extract `Ok` values | `Ok(8080)` |
+
+### Deep-Dive Explanation: Four Rules for Designing Maintainable Rust Errors (Read Slowly)
+
+1. **Libraries use structured enums; top-level apps can use boxed/context errors:** A library cannot guess how callers want to react to each failure, so it exposes a concrete `enum`. A CLI `main()` simply wants rich human-readable context.
+2. **Add context (like file path or line number) where the error happens:** Raw `io::Error` ("No such file or directory") doesn’t tell the user *which* file was missing—attach the path or key name in your error variant!
+3. **Keep error enums small and local to each module:** One giant monolithic `AppError` with 40 variants couples unrelated subsystems; prefer focused error types per component that compose upward via `From`.
+4. **Test error paths as thoroughly as happy paths:** Write unit tests asserting `matches!(load_port("bad"), Err(ConfigError::Parse(_)))` so error contracts never regress silently.
+
+**Quick check.** In `load_port` above, what compile-time error occurs if you delete the `impl From<ParseIntError> for ConfigError` block while keeping `text.trim().parse::<u16>()?`?
+
+---
 
 ## Exercises
 

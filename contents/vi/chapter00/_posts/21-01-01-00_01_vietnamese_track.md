@@ -10,7 +10,22 @@ categories:
 lesson_type: required
 ---
 
-Bản tiếng Việt của khóa học **Lập trình Rust: Từ nền tảng đến thành thạo hệ thống** hiện đang trong quá trình hoàn thiện. Mục tiêu của lộ trình này là dần đạt độ bao phủ tương đương bản tiếng Anh, bổ trợ song song chứ không thay thế bộ tài liệu tiếng Anh đã hoàn chỉnh.
+Khi một kỹ sư C++ hoặc Python lần đầu bước vào Rust, cú sốc lớn nhất không nằm ở cú pháp dấu chấm phẩy mà ở **mô hình tư duy hoàn toàn mới về bộ nhớ và quyền sở hữu**: lần đầu tiên, trình biên dịch không chỉ kiểm tra kiểu dữ liệu mà còn đóng vai trò một *nhà chứng minh toán học*, từ chối biên dịch mọi chương trình có nguy cơ truy cập bộ nhớ đã giải phóng hay tranh chấp dữ liệu (data race).
+
+Trang lộ trình này giúp bạn định vị chính xác nhánh Tiếng Việt của khóa `rust-self-learning` đang đi tới đâu, cách kết hợp mượt mà giữa các bài Chương 01 đã Việt hóa đầy đủ với các chương chuyên sâu về Ownership, Lifetimes và Concurrency ở bản Tiếng Anh.
+
+---
+
+## Bản đồ kiến thức nền: Bức tranh toàn cảnh bốn trụ cột của ngôn ngữ Rust
+
+Trước khi đi vào từng bài học, người tốt nghiệp đại học nên nhìn Rust qua bốn trụ cột kỹ thuật hệ thống liên kết chặt chẽ với nhau:
+
+1. **Quản lý bộ nhớ không cần Garbage Collector (Ownership & RAII):** Mọi giá trị trên Heap đều có đúng một chủ sở hữu (owner) trên Stack; khi chủ sở hữu ra khỏi phạm vi (`scope`), bộ nhớ tự động giải phóng ngay lập tức với chi phí bằng 0 lúc chạy.
+2. **Kiểm soát tham chiếu tại thời điểm biên dịch (Borrowing & Lifetimes):** Quy tắc *nhiều tham chiếu đọc `&T` HOẶC duy nhất một tham chiếu ghi `&mut T`* triệt tiêu tận gốc lỗi aliasing nguy hiểm và ngăn ngừa hoàn toàn data race ở lập trình đa luồng.
+3. **Hệ thống kiểu đại số (Algebraic Data Types — `enum`, `Option`, `Result`):** Rust loại bỏ con trỏ `null` và ngoại lệ ẩn (`exception`), buộc mọi trường hợp vắng mặt hoặc lỗi phải được xử lý tường minh qua đối khớp mẫu (`match`).
+4. **Chuỗi công cụ thống nhất (Cargo, rustc, Clippy, rust-analyzer):** Từ quản lý gói, kiểm thử đơn vị, kiểm tra tĩnh đến biên dịch chéo (WASM/nhúng), toàn bộ hệ sinh thái vận hành nhất quán qua một lệnh `cargo` duy nhất.
+
+---
 
 ## Nội dung đã hoàn thiện
 
@@ -37,6 +52,38 @@ Nên ưu tiên dịch tuần tự từng chương, bắt đầu từ Chương 2,
 - Trình bày công thức toán học (nếu có) bằng cú pháp `$$ ... $$`.
 
 Cảm ơn bạn đã đồng hành trong giai đoạn hoàn thiện phiên bản song ngữ.
+
+---
+
+### Ví dụ truy vết từng dòng (Stack / Heap / Trình biên dịch): Thấy ngay triết lý của Rust trong 6 dòng mã
+
+Dù bạn mới bắt đầu ở Chương 01, hãy thử đọc trước một đoạn mã 6 dòng minh họa cách Rust nghĩ về Stack và Heap:
+
+```rust
+fn main() {
+    let a = String::from("rust"); // Stack: (ptr, len=4, cap=4) -> Heap: ['r','u','s','t']
+    let b = a;                    // MOVE: quyền sở hữu chuyển từ a sang b (không copy Heap!)
+    // println!("{a}");           // LỖI BIÊN DỊCH E0382: a không còn hợp lệ nữa!
+    println!("{b}");              // Hợp lệ: b in "rust"
+}                                 // Cuối scope: drop(b) giải phóng Heap đúng 1 lần duy nhất!
+```
+
+| Dòng lệnh | Biến `a` trên Stack | Biến `b` trên Stack | Vùng nhớ Heap `"rust"` |
+| :--- | :--- | :--- | :--- |
+| `let a = String::from("rust");` | Chủ sở hữu `(ptr, 4, 4)` | Chưa tồn tại | Được cấp phát 4 byte |
+| `let b = a;` | Bị vô hiệu hóa (*moved*) | Chủ sở hữu mới `(ptr, 4, 4)` | Giữ nguyên, **không sao chép** |
+| Kết thúc `main()` | Không làm gì | Gọi `drop(b)` | Giải phóng **đúng 1 lần** (0 double-free!) |
+
+### Khung giải thích: Cách học Rust hiệu quả nhất từ ngày đầu tiên (nên đọc chậm)
+
+1. **Đừng chiến đấu với trình biên dịch — hãy đọc thông báo lỗi của nó:** Trình biên dịch `rustc` giải thích nguyên nhân lỗi kèm gợi ý sửa chi tiết hơn hầu hết mọi ngôn ngữ khác.
+2. **Tách rõ dữ liệu nằm trên Stack và dữ liệu nằm trên Heap:** Luôn tự hỏi kích thước kiểu dữ liệu có biết trước lúc biên dịch không (Stack) hay tăng giảm động lúc chạy (Heap).
+3. **Học vững Chương 01 bằng tiếng Việt rồi nối thẳng sang Chương 02:** Nắm chắc Cargo, biến bất biến mặc định, biểu thức `match` và module ở Chương 01 sẽ giúp bạn tiếp cận Ownership & Borrowing nhẹ nhàng hơn gấp bội.
+4. **Chạy thử `cargo test` và `cargo clippy` như thói quen hàng ngày:** Mỗi ví dụ trong khóa đều nên được gõ lại, cố tình làm hỏng 1 dòng và đọc phản hồi của `rustc`.
+
+**Kiểm tra nhanh.** Trong bảng truy vết 6 dòng mã ở trên, tại sao việc vô hiệu hóa `a` ngay sau lệnh `let b = a;` lại giúp ngăn chặn lỗi *double-free* (giải phóng cùng một vùng Heap hai lần) khi hàm `main` kết thúc?
+
+---
 
 ## Video tham khảo
 

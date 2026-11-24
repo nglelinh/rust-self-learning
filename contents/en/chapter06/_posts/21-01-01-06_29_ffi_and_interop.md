@@ -10,7 +10,25 @@ categories:
 lesson_type: required
 ---
 
-FFI is where Rust meets the outside world: C libraries, system APIs, and foreign runtimes. This lesson teaches the core FFI surface area — ABI compatibility, string handling, error translation — and how to wrap unsafe calls in safe Rust APIs that callers can use confidently.
+Every systems language eventually runs into the same sobering reality: the world's most battle-tested libraries—OpenSSL, SQLite, zlib, POSIX, CUDA, and decades of operating-system kernels—were written in C. Rewrite them all from scratch and you will spend a career chasing edge cases that were fixed in 1998. Call them directly from Rust, however, and you step off the cliff of the borrow checker into raw machine territory where types are merely agreements about bytes and registers.
+
+**Foreign Function Interface (FFI)** is the bridge across that cliff. In this lesson, we strip away the mystery of calling C from Rust (and exposing Rust to C) so you can design thin, audited `unsafe` boundaries that hand your callers a 100% safe, idiomatic Rust API.
+
+## Background Knowledge Map: What Is FFI and What Systems Layers Does It Touch?
+
+To cross a language boundary without corrupting memory or triggering undefined behavior, you are really coordinating four distinct layers of the systems stack:
+
+1. **Application Binary Interface (ABI) & Calling Conventions**:
+   While an *API* defines function names and types in source code, an **ABI** defines the machine-level contract: which CPU registers carry arguments (e.g., System V AMD64 passes the first six integer/pointer arguments in `rdi`, `rsi`, `rdx`, `rcx`, `r8`, `r9`), where return values live (`rax`), who cleans up the stack, and how structs are padded in memory. Writing `extern "C"` tells `rustc` to emit code matching the platform's C ABI rather than Rust's unstable internal ABI.
+
+2. **Data Representation & Memory Alignment (`#[repr(C)]`)**:
+   By default (`#[repr(Rust)]`), the Rust compiler is free to reorder struct fields to minimize padding bytes and shrink memory footprints. C compilers cannot reorder fields; they lay them out strictly in declaration order, inserting padding so each field starts at an address divisible by its alignment. Sharing a struct across FFI without `#[repr(C)]` causes the two languages to read different offsets from the same pointer—a silent memory-corruption bug.
+
+3. **String & Buffer Representation Across Languages**:
+   Rust strings (`&str`, `String`) are UTF-8 byte slices paired with an explicit length (`(ptr, len)`) and may legally contain interior `\0` bytes. C strings (`const char *`) are raw pointers with no stored length; they rely on a trailing NUL terminator (`0x00`) to mark the end. Bridging the two requires `std::ffi::CString` (owned, NUL-terminated, validated to contain no interior NULs) and `std::ffi::CStr` (borrowed view of a C string).
+
+4. **Linking, Object Files & Unwinding Boundaries**:
+   Compiling FFI code involves not just type-checking, but linking static (`.a`/`.lib`) or dynamic (`.so`/`.dylib`/`.dll`) libraries via `build.rs` and `cargo:rustc-link-lib`. Equally critical is panic safety: Rust stack unwinding across an `extern "C"` boundary is undefined behavior, so every Rust callback exported to C must either abort or trap panics with `std::panic::catch_unwind`.
 
 ## 60-minute teaching plan
 
@@ -311,6 +329,67 @@ bindgen /usr/include/zlib.h -o src/bindings.rs
 Most real FFI crates (like `libz-sys`, `openssl-sys`) use bindgen to generate their bindings.
 
 ---
+
+### Deep-Dive Explanation: Byte-Level Struct Layout and `CStr` Memory Traces (Read Slowly)
+
+Before writing a single `extern "C"` block, let us trace by hand how two seemingly identical structs occupy completely different bytes in memory—and why a single missing `#[repr(C)]` or NUL byte turns a clean call into garbage data.
+
+Suppose we have a 3-field telemetry packet containing a 1-byte sensor tag (`u8`, alignment 1), an 8-byte timestamp (`u64`, alignment 8), and a 2-byte reading (`u16`, alignment 2):
+
+```rust
+struct PacketRust {
+    tag: u8,         // size 1, align 1
+    timestamp: u64,  // size 8, align 8
+    reading: u16,    // size 2, align 2
+}
+
+#[repr(C)]
+struct PacketC {
+    tag: u8,         // size 1, align 1
+    timestamp: u64,  // size 8, align 8
+    reading: u16,    // size 2, align 2
+}
+```
+
+#### Step 1: Hand-Computing the `#[repr(C)]` Layout (Strict Declaration Order)
+
+The C ABI places each field at the next offset that is a multiple of its alignment, then pads the total struct size to a multiple of the struct's maximum alignment ($\max(1, 8, 2) = 8$):
+
+| Field | Size (bytes) | Alignment | Offset calculation | Byte range occupied |
+| :--- | :---: | :---: | :--- | :--- |
+| `tag: u8` | 1 | 1 | Start at `0` | `[0]` |
+| *padding* | 7 | — | Next multiple of 8 after `1` is `8` | `[1..7]` (7 wasted bytes) |
+| `timestamp: u64` | 8 | 8 | Aligned at `8` | `[8..15]` |
+| `reading: u16` | 2 | 2 | `16` is already a multiple of 2 | `[16..17]` |
+| *tail padding* | 6 | — | Next multiple of 8 after `18` is `24` | `[18..23]` (6 wasted bytes) |
+
+Total size of `PacketC`:
+$$\text{sizeof}(\texttt{PacketC}) = 1 + 7 + 8 + 2 + 6 = 24\text{ bytes}, \qquad \text{alignof}(\texttt{PacketC}) = 8.$$
+
+#### Step 2: Hand-Computing the `#[repr(Rust)]` Layout (Compiler Reordering)
+
+Without `#[repr(C)]`, `rustc` sorts fields from largest alignment to smallest (`timestamp`, then `reading`, then `tag`) to pack them tightly:
+
+| Field (reordered) | Size (bytes) | Alignment | Offset calculation | Byte range occupied |
+| :--- | :---: | :---: | :--- | :--- |
+| `timestamp: u64` | 8 | 8 | Start at `0` | `[0..7]` |
+| `reading: u16` | 2 | 2 | `8` is a multiple of 2 | `[8..9]` |
+| `tag: u8` | 1 | 1 | `10` is a multiple of 1 | `[10]` |
+| *tail padding* | 5 | — | Next multiple of 8 after `11` is `16` | `[11..15]` |
+
+Total size of `PacketRust`:
+$$\text{sizeof}(\texttt{PacketRust}) = 8 + 2 + 1 + 5 = 16\text{ bytes}, \qquad \text{alignof}(\texttt{PacketRust}) = 8.$$
+
+**What breaks if you pass `&PacketRust` to C expecting `struct PacketC *`?**
+Suppose Rust constructs `PacketRust { tag: 0x07, timestamp: 0x0000_0000_0000_03E8, reading: 0x0190 }` (timestamp `1000`, reading `400`). In little-endian memory, bytes `0..7` hold `E8 03 00 00 00 00 00 00`, bytes `8..9` hold `90 01`, and byte `10` holds `07`. When C dereferences `pkt->tag` at offset `0`, it reads `0xE8` (`232`) instead of `7`. When C reads `pkt->timestamp` at offset `8..15`, it reads `90 01 07 ?? ?? ?? ?? ??`—combining `reading`, `tag`, and 5 uninitialized padding bytes into a nonsensical 64-bit integer! And when C reads `pkt->reading` at offset `16..17`, it reads **2 bytes past the end of the 16-byte struct** (out-of-bounds read, UB).
+
+#### Step 3: Tracing a `CString` Across the Boundary
+
+Now trace passing `"ok"` from Rust to C `strlen(const char *s)`:
+- A Rust `&str` for `"ok"` is stored as the two bytes `[0x6F, 0x6B]` plus `len = 2`. There is **no** trailing `0x00`. Passing `"ok".as_ptr() as *const c_char` directly to `strlen` causes C to scan past byte 1 into adjacent stack/heap memory until it hits an accidental zero byte.
+- Calling `CString::new("ok")?` checks that neither byte is `0x00` and allocates a 3-byte buffer `[0x6F, 0x6B, 0x00]`.
+- `c_str.as_ptr()` hands C the address of byte `0`. `strlen` reads `0x6F` (count 1), `0x6B` (count 2), sees `0x00`, and stops—returning `2` safely.
+- **Crucial lifetime trap**: `CString::new("ok").unwrap().as_ptr()` drops the temporary `CString` at the semicolon, freeing those 3 bytes before C even runs! Always bind `let c_str = CString::new("ok")?;` to a local variable that outlives the foreign call.
 
 ## Code walkthrough: naive → idiomatic
 

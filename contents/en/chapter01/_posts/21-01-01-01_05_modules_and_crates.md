@@ -10,7 +10,22 @@ categories:
 lesson_type: required
 ---
 
-Rust codebases scale through clear module boundaries and explicit visibility. This lesson teaches how Rust projects are structured, how names resolve, and how to design a small crate with a clean API.
+Once a Rust program grows past a couple of hundred lines, stuffing everything into `src/main.rs` quickly becomes painful to read and impossible to integration-test. Yet newcomers arriving from Python or JavaScript often hit a classic surprise: creating `src/math.rs` does *not* automatically make it part of your program! In Rust, the module tree is **explicitly declared**—a file only exists to the compiler when its parent module mounts it with `mod`.
+
+This lecture demystifies Rust’s code organization: the exact boundary between **Package**, **Crate** (`lib.rs` vs. `main.rs`), and **Module**, the **private-by-default** encapsulation model, and the industry-standard *thin `main.rs` + testable `lib.rs`* architecture.
+
+---
+
+## Background Knowledge Map: Package, Crate, Module, and Visibility in Rust
+
+Four architectural rules keep even 100,000-line Rust codebases crystal clear:
+
+1. **The Compilation Unit Is the Crate, Not the File:** A single `package` (one `Cargo.toml`) may contain at most one library crate (`src/lib.rs`) and any number of binary crates (`src/main.rs`, `src/bin/*.rs`). `rustc` compiles an entire crate at once, so sibling modules can reference each other without C/C++ header files.
+2. **Declaration (`mod`) vs. Path Aliasing (`use`):** `mod math;` tells the compiler to *include* `src/math.rs` in the module tree (declare it **once** in its parent). `use crate::math::add;` merely brings an already-mounted item into local scope.
+3. **Private by Default, Child Sees Parent:** Items and struct fields are private to outer scopes unless marked `pub`, yet **child modules can inspect private items of their ancestors**—which is why `#[cfg(test)] mod tests` can unit-test private helpers right inside the same file!
+4. **Thin Binary + Rich Library Layout:** Put core domain logic in `src/lib.rs` (accessible to `tests/` integration tests and benchmarks) and keep `src/main.rs` as a thin CLI wrapper calling into the library.
+
+---
 
 ## 60-minute teaching plan
 
@@ -252,6 +267,42 @@ Everything else should live in modules with tests.
 1. Making everything `pub`: makes later refactors painful.
 2. Circular module dependencies: keep layers (e.g., `parser` depends on `model`, not the other way around).
 3. Putting IO everywhere: it makes tests hard.
+
+---
+
+### Worked Line-by-Line Trace (Module Tree & Visibility): Resolving `lib.rs` vs. `main.rs`
+
+Consider a package `calc_app` containing both `src/lib.rs` (library crate) and `src/main.rs` (binary crate):
+
+```text
+calc_app/
+├── Cargo.toml       (name = "calc_app")
+└── src/
+    ├── lib.rs       --> mod math; pub use math::add;
+    ├── math.rs      --> pub fn add(a: i32, b: i32) -> i32 { helper(a, b) }
+    │                    fn helper(a: i32, b: i32) -> i32 { a + b }
+    └── main.rs      --> fn main() { println!("{}", calc_app::add(2, 3)); }
+```
+
+Trace which calls compile from each scope:
+
+| Call Site | Calling `add(2, 3)` | Calling `helper(2, 3)` | Compiler Verdict |
+| :--- | :--- | :--- | :--- |
+| Inside `src/math.rs` | Compiles | Compiles | Same module |
+| Inside `math::tests` (child module) | Compiles | **Compiles** | Child modules can access parent’s private items |
+| Inside `src/lib.rs` | Compiles (`math::add`) | **Error E0603** | `helper` is private inside `math` |
+| Inside `src/main.rs` | Compiles (`calc_app::add`) | **Error E0603** | `main.rs` is a **separate crate**—only sees `lib.rs`’s `pub` API! |
+
+### Deep-Dive Explanation: Four Module Habits That Prevent Link & Visibility Headaches (Read Slowly)
+
+1. **Never declare `mod math;` in *both* `src/lib.rs` and `src/main.rs`:** Doing so compiles `math.rs` twice into two unrelated crates—producing baffling errors where `calc_app::math::Config` and `crate::math::Config` are incompatible types! Mount it once in `lib.rs` and import it via `calc_app::...` in `main.rs`.
+2. **Use `pub use` to design a clean public facade:** Re-export key types at the crate root so users write `calc_app::add` instead of memorising deep internal paths.
+3. **Use `pub(crate)` for internal shared utilities:** Share helpers freely across your own modules without committing to them as a public API contract.
+4. **Prefer `crate::...` absolute paths inside a library:** Absolute crate paths stay valid even when you reorganize nested files.
+
+**Quick check.** In `calc_app` above, if you delete `pub use math::add;` from `src/lib.rs` while leaving `mod math;` private, can `src/main.rs` still call `calc_app::math::add(2, 3)`—and why?
+
+---
 
 ## Exercises
 

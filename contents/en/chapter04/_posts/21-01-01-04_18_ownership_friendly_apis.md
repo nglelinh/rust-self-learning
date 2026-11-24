@@ -10,7 +10,30 @@ categories:
 lesson_type: required
 ---
 
-Most ergonomic Rust is about choosing the right ownership model at API boundaries. This lesson teaches a practical decision framework: what to borrow, what to own, and how to avoid clones without making APIs painful.
+Have you ever called a Rust library function that only needed to *read* a username—yet its signature demanded `name: String`, forcing you to sprinkle `.to_string()` and `.clone()` at every call site? Or the opposite extreme: a function plastered with three generic bounds and `<'a, 'b>` lifetimes that takes five minutes to decipher just to pass a file path?
+
+Great Rust APIs feel almost effortless to call because their signatures encode **exact ownership intent** at the boundary: borrow when reading, take ownership when storing or transforming, and use `Cow<'a, str>` when a function *usually* borrows but *occasionally* allocates. This lesson gives you a battle-tested decision matrix for designing ergonomic, zero-waste Rust APIs.
+
+---
+
+## Background Knowledge Map: Ownership as an API Design Language
+
+Three design principles separate clunky beginner signatures from idiomatic Rust libraries.
+
+### 1. Deref Coercion & Borrowed Slice Parameters (`&str`, `&[T]`, `&Path`)
+Because `String` derefs to `&str` and `Vec<T>` derefs to `&[T]`, accepting `&str` instead of `&String` lets callers pass string literals (`"hi"`), owned `String`s (`&s`), and substrings (`&s[1..4]`) with **zero extra allocation**. Taking `&String` or `&Vec<T>` as a parameter is almost always an anti-pattern!
+- **Core questions:** Why is `&[T]` strictly more general than `&Vec<T>`?
+- **Real-world reach:** Standard-library functions (`std::fs::read`, `str::contains`, `slice::sort`).
+
+### 2. Caller-Controlled Allocation (Owned Inputs & `Into<T>` / `AsRef<T>`)
+When a constructor *must* store a `String` inside a struct, taking `String` (by value) lets callers who already own a `String` move it in with **zero copies**, while callers with a `&str` explicitly pay `.into()` once. Taking `&str` and cloning internally hides an unconditional allocation even when the caller was ready to hand over ownership!
+- **Core questions:** Who should decide *when* a heap allocation happens—the caller or the callee?
+- **Real-world reach:** Builder patterns, `PathBuf` constructors, and `reqwest` / `axum` request APIs.
+
+### 3. Copy-on-Write (`Cow<'a, str>`) for Conditional Allocation
+What if a sanitizer function leaves 99% of inputs untouched (no allocation needed!) and only escapes special characters on 1% of inputs (must allocate a new `String`)? Returning `Cow<'a, str>` (`Borrowed(&'a str)` or `Owned(String)`) gives you zero-copy speed in the common case and full flexibility in the rare case!
+- **Core questions:** How does `Cow<'a, str>` avoid cloning clean inputs without breaking the return type?
+- **Real-world reach:** HTML/URL escaping, `serde` string deserialization, and log normalization.
 
 ## 60-minute teaching plan
 
@@ -406,6 +429,43 @@ fn normalize(s: &str) -> String { ... }
 4. Adding `AsRef<str>` generics "just in case" (clutters signatures and error messages).
 
 ---
+
+---
+
+## Worked Examples & Deep Dive
+
+### Worked Example 1: Comparing 3 Signatures for `struct User { name: String }`
+
+Trace the exact number of heap allocations when two different callers construct `User`: Caller 1 already has an owned `s: String` (e.g., read from stdin); Caller 2 has a literal `"alice": &str`.
+
+| Constructor Signature | Caller 1 (`s: String`) | Caller 2 (`"alice": &str`) | Verdict |
+|---|---|---|---|
+| `fn new(name: &str) -> User` (clones inside) | **1 wasted clone!** (`s` dropped after) | 1 necessary alloc | Wasteful for Caller 1 |
+| `fn new(name: String) -> User` (takes ownership) | **0 allocs (move!)** | 1 explicit alloc (`"alice".into()`) | **Idiomatic default ✓** |
+| `fn new(name: impl Into<String>) -> User` | **0 allocs (move!)** | 1 alloc (ergonomic call `User::new("alice")`) | **Ergonomic library API ✓** |
+
+### Worked Example 2: Tracing `Cow<'a, str>` on Clean vs. Dirty Inputs
+
+Consider `fn sanitize(input: &str) -> Cow<'_, str>` that replaces spaces with `'_'`:
+- **Call 1:** `sanitize("hello_world")` — scans bytes, sees no `' '` → returns **`Cow::Borrowed("hello_world")`**. **Heap allocations: 0!**
+- **Call 2:** `sanitize("hello world")` — sees `' '` → allocates `"hello_world".to_string()` and returns **`Cow::Owned(String)`**. **Heap allocations: 1 (only when needed!).**
+- Both callers simply read `&*out` (via `Deref<Target = str>`) without even caring which variant came back!
+
+### Deep-Dive Explanation: A 4-Step Decision Framework for Any Rust Function Signature (Read Slowly)
+
+#### Step 1: Ask what the function *does* with each input
+- **Read-only?** Take `&str`, `&[T]`, or `&Path` (never `&String` or `&Vec<T>`).
+- **Mutates in place?** Take `&mut T` or `&mut [T]`.
+- **Stores or consumes?** Take `T` by value so callers can transfer ownership with zero copies.
+
+#### Step 2: Keep return types simple—default to owned unless borrowing is obvious
+Returning `&'a str` is great when returning a slice of an input (like `trim` or `split_once`). If the function builds new data or aggregates from multiple sources, return owned `String` or `Vec<T>` so callers aren’t trapped by lifetime ties.
+
+#### Step 3: Reach for `Cow<'a, T>` only when measurements justify the fast path
+If 95%+ of inputs pass through unmodified (URL decoding, path normalization, whitespace stripping), `Cow<'a, str>` eliminates millions of allocations cleanly. Don’t add `Cow` blindly when inputs are almost always modified.
+
+#### Step 4: Prefer concrete types over heavy generics until reuse demands it
+Use `impl AsRef<Path>` for file paths (callers love passing `"config.toml"`, `&PathBuf`, and `Path` alike), but avoid turning every helper function into `fn f<S: AsRef<str>, I: IntoIterator<Item = S>>`—simpler concrete signatures give dramatically better compiler error messages and faster builds.
 
 ## Exercises
 

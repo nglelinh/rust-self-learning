@@ -10,7 +10,29 @@ categories:
 lesson_type: required
 ---
 
-Rust's type system pushes many concurrency bugs to compile time. This lesson introduces OS threads, shared-state concurrency using `Arc<Mutex<T>>`, and the crucial difference between data races (which Rust prevents) and deadlocks (which you still must avoid).
+In C and C++, a single forgotten mutex lock around a shared integer creates a **data race**—Undefined Behavior that passes every test on your laptop and then corrupts customer balances once a month under peak production load. Rust’s famous promise of **“fearless concurrency”** does not come from a heavy runtime; it comes from two tiny marker traits—`Send` and `Sync`—that extend ownership and borrowing directly across OS threads, turning data races into **compile-time errors**!
+
+Yet Rust is honest about what a type system *cannot* prevent: **deadlocks** and lock contention are logic bugs, not memory-unsafety bugs. This lesson builds your mental model of OS threads, `Send`/`Sync`, and `Arc<Mutex<T>>`, showing how Rust ties data *inside* the lock so you can never touch protected state without holding the mutex—and how strict lock ordering prevents deadlocks.
+
+---
+
+## Background Knowledge Map: Hardware Concurrency & Rust’s Type Guarantees
+
+### 1. Memory Models & Data Races
+A **data race** occurs when two threads access the same memory address concurrently, at least one access is a write, and there is no synchronization ordering them. Because modern CPUs reorder instructions and hold stale values in L1/L2 caches, data races cause torn reads and memory corruption. Rust prevents them statically by forbidding unsynchronized shared mutable state.
+- **Core questions:** What is the exact difference between a **data race** (UB, prevented by Rust) and a **race condition / deadlock** (logic bug, still possible)?
+- **Real-world reach:** Multi-core web servers, database storage engines, and real-time audio/video pipelines.
+
+### 2. Marker Traits: `Send` and `Sync`
+- **`T: Send`**: ownership of `T` can be safely **moved** to another thread (`String`, `Vec<T>`, `Arc<T>` are `Send`; `Rc<T>` is `!Send`).
+- **`T: Sync`**: a shared reference `&T` can be safely **accessed** from multiple threads at once (`T` is `Sync` iff `&T` is `Send`; `i32`, `Mutex<T>` are `Sync`; `RefCell<T>` is `!Sync`).
+- **Core questions:** Why does `Arc<RefCell<T>>` fail to compile when sent to `std::thread::spawn`, while `Arc<Mutex<T>>` compiles cleanly?
+- **Real-world reach:** Thread-safe library design and zero-cost concurrency auditing.
+
+### 3. Data-Centric Locks (`Mutex<T>`) & Deadlock Prevention
+In C++/Java, a mutex sits *next to* the data, hoping programmers remember to lock it. In Rust, `Mutex<T>` **owns `T` inside itself**: you literally cannot obtain `&mut T` without calling `.lock()`, which returns a `MutexGuard<'_, T>` that automatically unlocks on `Drop`!
+- **Core questions:** Why does holding two mutexes in opposite orders (`A -> B` vs `B -> A`) deadlock?
+- **Real-world reach:** Concurrent caches, connection pools, and OS kernel synchronization.
 
 ## 60-minute teaching plan
 
@@ -421,6 +443,47 @@ A make/cargo-like system spawns threads for independent build tasks and uses a m
 4. **Deadlock demonstration**: write a program that deliberately deadlocks, then fix it by using a consistent lock ordering.
 
 ---
+
+---
+
+## Worked Examples & Deep Dive
+
+### Worked Example 1: Checking `Send` and `Sync` Across 5 Common Types by Hand
+
+Test whether each wrapper can be moved into `std::thread::spawn(move || ...)`:
+
+| Type | `Send`? | `Sync`? | Compiles in `thread::spawn`? | Why? |
+|---|---|---|---|---|
+| `String` | Yes | Yes | **Yes ✓** | Exclusive ownership moves cleanly |
+| `Rc<u64>` | **No** | **No** | **No ✗** | Non-atomic refcount would race across threads |
+| `Arc<u64>` | Yes | Yes | **Yes ✓** | Atomic refcount, read-only `u64` |
+| `Arc<RefCell<u64>>` | **No** | **No** | **No ✗** | `Arc<T>` is `Send` only if `T: Send + Sync`, and `RefCell` is `!Sync`! |
+| `Arc<Mutex<u64>>` | **Yes** | **Yes** | **Yes ✓** | `Mutex<T>` is `Sync` whenever `T: Send`! |
+
+### Worked Example 2: Tracing an AB–BA Deadlock Timeline (Why Rust Compiles It!)
+
+Suppose Thread 1 and Thread 2 both need `lock_a` and `lock_b`:
+
+| Time | Thread 1 | Thread 2 | State |
+|---|---|---|---|
+| `t = 1` | `let _a = lock_a.lock();` (acquired!) | `let _b = lock_b.lock();` (acquired!) | Both running |
+| `t = 2` | `let _b = lock_b.lock();` (**waits for T2**) | `let _a = lock_a.lock();` (**waits for T1**) | **DEADLOCK forever!** |
+
+Notice there is **zero memory corruption** and **zero data race**—every access is locked! That is why Rust’s type system allows it to compile. **Fix:** enforce a global **lock ordering** (always lock `lock_a` *before* `lock_b`), or combine both fields into a single `Mutex<CombinedState>`.
+
+### Deep-Dive Explanation: Writing Fast, Deadlock-Free Shared-State Rust (Read Slowly)
+
+#### Step 1: Prefer `std::thread::scope` when threads only borrow local stack data
+Classic `std::thread::spawn` demands `'static`, forcing `Arc` even for short parallel loops. `std::thread::scope` guarantees all scoped threads join before the scope exits—letting worker threads borrow plain `&slice` directly from your stack with **zero `Arc` overhead**!
+
+#### Step 2: Keep critical sections razor-thin
+Never hold a `MutexGuard` while doing disk I/O, network calls, or heavy computation. Lock → copy/update the minimal state in nanoseconds → drop the guard (end the `{ ... }` block) → do slow work outside the lock.
+
+#### Step 3: Understand mutex poisoning instead of blindly `.unwrap()`ing
+If a thread panics while holding a `MutexGuard`, the protected data might be left half-updated—so Rust marks the mutex **poisoned** (`Err(PoisonError)`). In small CLIs `.unwrap()` propagates the panic cleanly; in resilient servers, you can inspect or recover via `.into_inner()` if your invariant still holds.
+
+#### Step 4: Ask whether message passing or atomics beat a `Mutex`
+For a simple counter, `AtomicUsize::fetch_add(1, Ordering::Relaxed)` is lock-free and orders of magnitude faster than `Mutex<usize>`. For coordinating multi-stage pipelines, channels (next lesson!) eliminate shared locks entirely.
 
 ## Exercises
 

@@ -10,7 +10,22 @@ categories:
 lesson_type: required
 ---
 
-Rust development is mostly about mastering the feedback loop: write code, read compiler messages, iterate quickly. This lesson sets up that loop and explains the handful of tools you will use every day.
+If you have ever lost an entire afternoon debugging a broken `Makefile`, a mismatched C++ linker flag, or a Python environment that works on your laptop and explodes on CI, your first ten minutes with **Cargo** and **rustup** will feel startlingly calm. With two commands—`cargo new` and `cargo test`—dependency resolution, deterministic lockfiles, unit testing, and native compilation work identically across Linux, macOS, and Windows.
+
+This opening lecture builds your mental model of the Rust toolchain: how `rustup`, `rustc`, `cargo`, `rustfmt`, and `clippy` fit together, why `Cargo.toml` and `Cargo.lock` serve different contracts, and what actually changes under the hood between `cargo check`, `cargo build`, and `cargo build --release`.
+
+---
+
+## Background Knowledge Map: The Four Layers of the Rust Toolchain
+
+For a university graduate coming from C/C++, Java, or Python, Rust’s tooling is easiest to understand as four cleanly separated engineering layers:
+
+1. **Toolchain Multiplexing (`rustup`):** Manages multiple compiler channels (`stable`, `beta`, `nightly`) and cross-compilation target triples (such as `x86_64-unknown-linux-gnu` or `wasm32-unknown-unknown`) side by side without polluting system directories.
+2. **Ahead-of-Time Compilation Pipeline (`rustc` + LLVM):** Lowers source code through AST $$	o$$ HIR $$	o$$ MIR (where the **borrow checker** proves memory safety) $$	o$$ LLVM IR $$	o$$ native machine code with zero runtime garbage collector.
+3. **Deterministic Build & Dependency Graph (`cargo`):** Resolves Semantic Versioning constraints from `Cargo.toml` and pins exact versions plus cryptographic checksums in `Cargo.lock`, guaranteeing bit-reproducible dependency trees across teams and CI runners.
+4. **Static Analysis & Formatting (`clippy`, `rustfmt`, `rust-analyzer`):** Automates code style and catches subtle performance bugs (like needless heap allocations) before code review even begins.
+
+---
 
 ## 60-minute teaching plan
 
@@ -242,6 +257,31 @@ Teach the basics:
 ```bash
 cargo check
 ```
+
+---
+
+### Worked Line-by-Line Trace (Compiler Pipeline & Build Profiles): `check` vs `debug` vs `--release`
+
+Run three everyday Cargo commands on the same project and trace exactly which compiler stages execute and how runtime behavior shifts:
+
+| Cargo Command | Type & Borrow Checking (MIR) | LLVM Codegen & Optimization | Output Binary | Integer Overflow (`255u8 + 1`) |
+| :--- | :--- | :--- | :--- | :--- |
+| `cargo check` | **Yes** (100% full check) | **Skipped** (fast feedback loop) | None | — |
+| `cargo build` | **Yes** | `opt-level = 0` + debug symbols | `target/debug/<app>` | **Panics** immediately at runtime |
+| `cargo build --release` | **Yes** | `opt-level = 3` (inlining, SIMD) | `target/release/<app>` | **Two’s-complement wrap** (`0`, no panic) |
+
+Look closely at that last column: `--release` does not merely make your program **10–100× faster**—it also disables debug overflow checks, which is why benchmarks *must* run in `--release` and why overflow-sensitive code should use explicit `checked_*` or `saturating_*` methods.
+
+### Deep-Dive Explanation: Four Toolchain Habits That Pay Off Immediately (Read Slowly)
+
+1. **Separate intent (`Cargo.toml`) from exact reproducibility (`Cargo.lock`):** Commit `Cargo.lock` for binary applications so every deployment builds the exact same dependency graph; libraries typically leave it uncommitted so downstream callers can unify versions.
+2. **Live inside `cargo check` during edit–compile loops:** Skipping LLVM machine-code generation cuts iteration time dramatically while still giving you 100% of `rustc`’s type and borrow-checker diagnostics.
+3. **Treat `cargo clippy` as an automated senior reviewer:** Clippy flags non-idiomatic patterns, redundant `.clone()` calls, and subtle logic traps right at compile time.
+4. **Never judge Rust’s speed from a `debug` build:** Unoptimized `debug` builds leave bounds checks, iterator abstractions, and helper calls un-inlined for debugger readability.
+
+**Quick check.** You add `serde = "1.0"` to a CLI binary application’s `Cargo.toml`. Should you commit `Cargo.lock` to Git or add it to `.gitignore`, and why?
+
+---
 
 ## In-class exercises (10 to 15 minutes)
 

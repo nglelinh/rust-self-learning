@@ -10,7 +10,22 @@ categories:
 lesson_type: required
 ---
 
-Rust is strict about types, but the payoff is fewer hidden conversions and fewer runtime surprises. This lesson teaches the "type shape" of Rust and the safest ways to convert between types.
+In 1996, the Ariane 5 rocket self-destructed 37 seconds after liftoff—a $370 million loss triggered by a 64-bit floating-point horizontal velocity being narrowed into a 16-bit signed integer and silently overflowing. Where C and C++ allow implicit numeric conversions and treat signed overflow as *undefined behavior*, Rust takes an uncompromising stance: **zero implicit numeric coercions**, explicit bit widths, and first-class APIs for handling overflow and fallible conversions.
+
+This lecture maps Rust’s primitive numeric types (`i8`–`i128`, `u8`–`u128`, `usize`, `f32`/`f64`), shows how local type inference keeps code concise without sacrificing static safety, and compares the three conversion buckets (`parse`, `From`/`TryFrom`, and `as`).
+
+---
+
+## Background Knowledge Map: Bit-Exact Types and Overflow Semantics in Rust
+
+Four systems-level guarantees underpin every arithmetic expression in Rust:
+
+1. **Fixed Bit Widths & Architecture-Sized Indices:** An `i32` is *always* 32 bits (4 bytes) on every CPU; `usize` and `isize` match pointer width (8 bytes on 64-bit machines) and are required for indexing slices and vectors.
+2. **No Implicit Numeric Widening or Narrowing:** Adding an `i32` and an `i64`—or an `i32` and an `f64`—is a compile-time error until you convert explicitly, preventing accidental precision loss or sign bugs.
+3. **Explicit Overflow Policies:** Debug builds panic on overflow while release builds wrap in two’s complement. Whenever overflow is possible in domain logic, Rust provides three explicit method families: `checked_*` (returns `Option`), `saturating_*` (clamps to min/max), and `wrapping_*` (modular arithmetic $$\bmod 2^N$$).
+4. **Lossless (`From`/`Into`) vs. Fallible (`TryFrom`) vs. Truncating (`as`):** Prefer `From` when widening safely (`u8` $$	o$$ `u32`), `TryFrom` when narrowing (`i64` $$	o$$ `u8`), and reserve `as` only when bit-truncation is explicitly intended.
+
+---
 
 ## 60-minute teaching plan
 
@@ -237,6 +252,42 @@ fn variance_zero_for_constant() {
 ```
 
 If floating comparisons become noisy later, introduce approximate comparisons. For now keep cases exact.
+
+---
+
+### Worked Line-by-Line Trace (Bit Representation & Overflow): What Happens to `250u8 + 10u8`?
+
+An unsigned 8-bit integer (`u8`) holds values in $$[0, 2^8 - 1] = [0, 255]$$. Trace what happens when adding `a = 250u8` (`0b1111_1010`) and `b = 10u8` (`0b0000_1010`), whose mathematical sum is $$260 = 256 + 4$$:
+
+```rust
+let a: u8 = 250;
+let b: u8 = 10;
+
+let c1 = a.checked_add(b);      // None (overflow caught cleanly!)
+let c2 = a.saturating_add(b);   // 255  (clamped at ceiling—great for RGB pixels/audio)
+let c3 = a.wrapping_add(b);     // 4    (260 mod 256 = 4—great for hashes/checksums)
+let c4 = 300_i32 as u8;         // 44   (TRAP: 300 mod 256 = 44; `as` silently truncates!)
+let c5 = u8::try_from(300_i32); // Err(...) (SAFE: forces you to handle out-of-range!)
+```
+
+| Expression | Value Returned | Return Type | Safety Profile |
+| :--- | :--- | :--- | :--- |
+| `250u8.checked_add(10)` | `None` | `Option<u8>` | Safest—explicit failure signal |
+| `250u8.saturating_add(10)` | `255` | `u8` | Safe clamping at type bounds |
+| `250u8.wrapping_add(10)` | `4` | `u8` | Explicit modular arithmetic |
+| `300_i32 as u8` | `44` | `u8` | Hazardous—silently drops high bits |
+| `u8::try_from(300_i32)` | `Err(...)` | `Result<u8, ...>` | Safe—checked at runtime |
+
+### Deep-Dive Explanation: Four Rules for Bulletproof Numeric Code (Read Slowly)
+
+1. **Replace narrowing `as` casts with `TryFrom`:** Writing `(-1_i32) as u32` silently produces `4_294_967_295` with zero compiler error. `u32::try_from(x)` turns that silent corruption into a recoverable `Result`.
+2. **Never test floating-point equality with `==` after arithmetic:** In IEEE 754 binary64, `0.1 + 0.2 == 0.30000000000000004`. Compare `(a - b).abs() < 1e-9` instead.
+3. **Match the overflow method to the domain:** Financial counters and memory sizes belong in `checked_*`; pixel brightness or audio gain belongs in `saturating_*`; cyclic ring buffers and hashes belong in `wrapping_*`.
+4. **Annotate boundary literals clearly:** Writing `1_000_000_u64` or `255_u8` documents your exact intent and prevents accidental `i32` default inference.
+
+**Quick check.** What integer value does `(-5_i32) as u8` produce in two’s complement (modulo 256), and what does `u8::try_from(-5_i32)` return instead?
+
+---
 
 ## Exercises
 

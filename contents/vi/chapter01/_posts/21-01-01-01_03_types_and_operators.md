@@ -10,7 +10,22 @@ categories:
 lesson_type: required
 ---
 
-Rust kiểm soát hệ thống kiểu dữ liệu rất chặt chẽ, đổi lại chương trình tránh được các phép ép kiểu ngầm và hạn chế lỗi bất ngờ khi chạy. Bài học này trình bày hệ thống kiểu cơ bản của Rust và các cách chuyển đổi kiểu an toàn.
+Năm 1996, tên lửa đẩy Ariane 5 trị giá 370 triệu USD phát nổ chỉ 37 giây sau khi rời bệ phóng vì một lỗi tưởng chừng nhỏ xíu: một số thực 64-bit bị ép kiểu ngầm sang số nguyên có dấu 16-bit gây **tràn số (overflow)** không được xử lý. Trong C hay C++, trình biên dịch thường âm thầm cắt cụt bit hoặc rơi vào *undefined behavior* — còn trong Rust, triết lý hoàn toàn ngược lại: **không bao giờ ép kiểu số ngầm định** và buộc lập trình viên đối mặt thẳng với tràn số lẫn chuyển đổi thất bại.
+
+Bài học này trang bị cho bạn bản đồ đầy đủ các kiểu dữ liệu gốc của Rust (số nguyên có dấu/không dấu, `usize`, số thực IEEE 754), cơ chế suy luận kiểu thông minh, ba nhóm chuyển đổi kiểu (`parse`, `TryFrom`/`From`, `as`), và các phép toán chống tràn số tường minh (`checked_*`, `saturating_*`, `wrapping_*`).
+
+---
+
+## Bản đồ kiến thức nền: Hệ thống kiểu tĩnh nghiêm ngặt và biểu diễn bit trong Rust
+
+Để làm chủ kiểu dữ liệu trong lập trình hệ thống, hãy nắm chắc bốn trụ cột sau:
+
+1. **Kích thước tường minh theo bit (`i8`..`i128`, `u8`..`u128`, `usize`):** Khác với `int`/`long` trong C có kích thước thay đổi tùy hệ điều hành, `i32` trong Rust **luôn** chiếm đúng 4 byte ở mọi máy tính; riêng `usize`/`isize` bằng đúng kích thước con trỏ (8 byte trên CPU 64-bit) dùng để đánh chỉ số mảng.
+2. **Không ép kiểu ngầm định (No Implicit Coercion):** Bạn không thể cộng trực tiếp một `i32` với một `i64` hay `f64` mà không chuyển đổi rõ ràng — loại bỏ hoàn toàn các lỗi mất độ chính xác lặng lẽ.
+3. **An toàn tràn số tường minh:** Thay vì để tràn số trở thành *undefined behavior*, Rust kiểm tra và `panic` ở chế độ `debug`, và cung cấp hẳn ba họ phương thức biểu đạt rõ ý đồ: `checked_add` (trả `Option`), `saturating_add` (kẹp trần), và `wrapping_add` (quay vòng modulo $$2^N$$).
+4. **Chuyển đổi không mất mát (`From`/`Into`) vs. Có thể thất bại (`TryFrom`) vs. Cắt bit (`as`):** Rust khuyến khích dùng `From` khi luôn an toàn (như `u8` $$	o$$ `u32`), `TryFrom` khi có nguy cơ vượt biên (như `i64` $$	o$$ `u8`), và hạn chế tối đa toán tử `as` vì `as` âm thầm cắt cụt bit.
+
+---
 
 ## Kế hoạch giảng dạy 60 phút
 
@@ -233,6 +248,42 @@ fn variance_zero_for_constant() {
 ```
 
 Ở ví dụ này, các bộ dữ liệu kiểm thử cho kết quả chính xác nên có thể so sánh trực tiếp bằng `assert_eq!`. Với các phép toán số thực có sai số làm tròn về sau, cần dùng phép so sánh gần đúng với ngưỡng sai số (epsilon).
+
+---
+
+### Ví dụ truy vết từng dòng (Biểu diễn nhị phân & Tràn số): Điều gì xảy ra với `250u8 + 10u8`?
+
+Một biến `u8` chỉ có 8 bit, lưu được các số từ $$0$$ đến $$2^8 - 1 = 255$$. Hãy truy vết từng phép toán khi cộng `a = 250u8` (`0b1111_1010`) với `b = 10u8` (`0b0000_1010`) — kết quả toán học là $$260 = 256 + 4$$:
+
+```rust
+let a: u8 = 250;
+let b: u8 = 10;
+
+let c1 = a.checked_add(b);    // None (phát hiện tràn số an toàn!)
+let c2 = a.saturating_add(b); // 255  (kẹp ở mức trần, cực hữu ích cho pixel ảnh/âm lượng)
+let c3 = a.wrapping_add(b);   // 4    (260 mod 256 = 4, hữu ích cho hàm băm/mật mã)
+let c4 = 300_i32 as u8;       // 44   (NGUY HIỂM: 300 mod 256 = 44 — `as` âm thầm cắt mất bit cao!)
+let c5 = u8::try_from(300_i32); // Err(...) (AN TOÀN: buộc bạn xử lý lỗi vượt biên!)
+```
+
+| Biểu thức | Kết quả trả về | Kiểu kết quả | Mức độ an toàn |
+| :--- | :--- | :--- | :--- |
+| `250u8.checked_add(10)` | `None` | `Option<u8>` | Cao nhất — báo hiệu tường minh |
+| `250u8.saturating_add(10)` | `255` | `u8` | An toàn khi muốn kẹp biên |
+| `250u8.wrapping_add(10)` | `4` | `u8` | Rõ ý đồ số học modulo $$2^8$$ |
+| `300_i32 as u8` | `44` | `u8` | Rủi ro — âm thầm mất dữ liệu! |
+| `u8::try_from(300_i32)` | `Err(...)` | `Result<u8, ...>` | An toàn — bắt lỗi lúc chạy |
+
+### Khung giải thích: Bốn nguyên tắc vàng về kiểu dữ liệu và toán tử (nên đọc chậm)
+
+1. **Ưu tiên `TryFrom` thay cho `as` khi thu hẹp kiểu:** `as` không bao giờ báo lỗi dù bạn ép `-1i32 as u32` (biến thành `4_294_967_295`!). Dùng `u32::try_from(x)` giúp chặn đứng lỗi dấu ngay tức thì.
+2. **Đừng bao giờ so sánh bằng trực tiếp hai số thực `f64` sau phép tính:** Trong chuẩn IEEE 754, `0.1 + 0.2` bằng `0.30000000000000004`, không bằng `0.3`. Hãy luôn so sánh độ lệch tuyệt đối `(a - b).abs() < 1e-9`.
+3. **Chọn `checked_` / `saturating_` / `wrapping_` theo đúng nghiệp vụ:** Tính tiền bạc hay bộ đếm dung lượng dùng `checked_*`; xử lý ảnh/tín hiệu dùng `saturating_*`; băm hoặc vòng đệm (ring buffer) dùng `wrapping_*`.
+4. **Khai báo rõ kiểu cho hằng số biên và bài test:** Viết `255_u8` hay `1_000_000_u64` với dấu gạch dưới phân tách hàng nghìn giúp mã vừa dễ đọc vừa tránh suy luận nhầm sang `i32`.
+
+**Kiểm tra nhanh.** Kết quả của `(-5_i32) as u8` trong Rust (theo biểu diễn bù hai modulo 256) là bao nhiêu — và nếu thay bằng `u8::try_from(-5_i32)` thì kết quả trả về là gì?
+
+---
 
 ## Bài tập
 

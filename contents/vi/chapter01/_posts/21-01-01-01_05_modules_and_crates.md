@@ -10,7 +10,22 @@ categories:
 lesson_type: required
 ---
 
-Dự án Rust dễ mở rộng nhờ ranh giới module rõ ràng và quy tắc phạm vi truy cập (visibility) tường minh. Bài học này trình bày cách tổ chức một dự án Rust, cách phân giải tên (name resolution) và cách thiết kế một crate nhỏ với API gọn gàng.
+Khi một chương trình Rust vượt quá 200 dòng, đặt toàn bộ mã vào một tệp `src/main.rs` nhanh chóng biến thành cơn ác mộng khó kiểm thử và khó bảo trì. Nhưng nhiều người mới từ Python hoặc JavaScript sang Rust hay bị lúng túng ở bước tách tệp: tại sao tạo thêm tệp `src/math.rs` rồi mà trình biên dịch vẫn bảo *"không tìm thấy"*? Câu trả lời nằm ở thiết kế tường minh của Rust: **cây module không tự động quét thư mục** — mọi tệp chỉ tồn tại trong chương trình khi được khai báo rõ bằng `mod` từ gốc crate!
+
+Bài học này gỡ rối hoàn toàn hệ thống tổ chức mã của Rust: phân biệt chính xác **Package**, **Crate** (`lib.rs` vs `main.rs`) và **Module**, hiểu nguyên tắc **riêng tư mặc định (private by default)**, và áp dụng kiến trúc chuẩn công nghiệp *thin `main.rs` + testable `lib.rs`*.
+
+---
+
+## Bản đồ kiến thức nền: Kiến trúc phân tầng Package – Crate – Module trong Rust
+
+Nắm vững bốn quy tắc sau sẽ giúp bạn tổ chức dự án Rust hàng chục nghìn dòng mà không bao giờ lạc đường:
+
+1. **Đơn vị biên dịch là Crate, không phải Tệp:** Một `package` (có 1 `Cargo.toml`) có thể chứa tối đa 1 library crate (`src/lib.rs`) và nhiều binary crates (`src/main.rs`, `src/bin/*.rs`). Trình biên dịch `rustc` biên dịch nguyên một **crate** trong một lần, nên các module trong cùng crate có thể gọi chéo lẫn nhau mà không cần tệp header `.h` như C/C++.
+2. **Khai báo `mod` vs. Nhập đường dẫn `use`:** `mod foo;` ra lệnh cho trình biên dịch *gắn tệp `foo.rs` vào cây module* (chỉ khai báo **1 lần** ở module cha!). Còn `use crate::foo::bar;` chỉ tạo một tên viết tắt để đỡ phải gõ đường dẫn dài.
+3. **Riêng tư mặc định (Private by Default) & Đóng gói bất biến:** Mọi hàm, struct và từng trường (field) của struct đều mặc định `private` đối với module cha và bên ngoài, nhưng **module con luôn nhìn thấy phần private của module cha** — rất lý tưởng để đặt `#[cfg(test)] mod tests` ngay trong cùng tệp mà vẫn kiểm thử được các hàm nội bộ!
+4. **Kiến trúc `lib.rs` + `main.rs` mỏng:** Đưa toàn bộ logic nghiệp vụ vào `src/lib.rs` để tái sử dụng và viết integration tests trong `tests/`; giữ `src/main.rs` siêu mỏng chỉ lo đọc tham số dòng lệnh và gọi thư viện.
+
+---
 
 ## Kế hoạch giảng dạy 60 phút
 
@@ -252,6 +267,42 @@ Toàn bộ logic nghiệp vụ còn lại nên được đặt trong các module
 1. Gắn `pub` cho mọi thành phần: khiến việc tái cấu trúc về sau gặp nhiều ràng buộc.
 2. Tạo phụ thuộc vòng giữa các module: cần duy trì kiến trúc phân lớp rõ ràng (ví dụ `parser` phụ thuộc `model`, không làm ngược lại).
 3. Trộn lẫn thao tác IO vào khắp các hàm xử lý: khiến việc viết kiểm thử đơn vị trở nên khó khăn.
+
+---
+
+### Ví dụ truy vết từng dòng (Cây Module & Quyền truy cập): Truy vết lỗi kinh điển khi tách tệp
+
+Giả sử package `calc_app` có cấu trúc gồm cả `src/lib.rs`, `src/math.rs` và `src/main.rs`:
+
+```text
+calc_app/
+├── Cargo.toml       (name = "calc_app")
+└── src/
+    ├── lib.rs       --> mod math; pub use math::add;
+    ├── math.rs      --> pub fn add(a: i32, b: i32) -> i32 { helper(a, b) }
+    │                    fn helper(a: i32, b: i32) -> i32 { a + b }
+    └── main.rs      --> fn main() { println!("{}", calc_app::add(2, 3)); }
+```
+
+Truy vết đường đi và quyền nhìn thấy (visibility) từ từng vị trí:
+
+| Vị trí gọi | Gọi `add(2, 3)` | Gọi `helper(2, 3)` | Giải thích của trình biên dịch |
+| :--- | :--- | :--- | :--- |
+| Bên trong `src/math.rs` | Hợp lệ | Hợp lệ | Cùng module |
+| Bên trong `math::tests` (module con) | Hợp lệ | **Hợp lệ** | Module con được phép nhìn vào `private` của cha! |
+| Bên trong `src/lib.rs` | Hợp lệ (`math::add`) | **Lỗi E0603** | `helper` là private bên trong `math` |
+| Bên trong `src/main.rs` | Hợp lệ (`calc_app::add`) | **Lỗi E0603** | `main.rs` là **crate riêng** — chỉ thấy API `pub` của `lib.rs`! |
+
+### Khung giải thích: Bốn nguyên tắc tổ chức mã chuẩn công nghiệp trong Rust (nên đọc chậm)
+
+1. **Đừng bao giờ khai báo `mod math;` ở cả `lib.rs` lẫn `main.rs`:** Làm vậy sẽ buộc trình biên dịch biên dịch tệp `math.rs` thành **hai module tách biệt** thuộc hai crate khác nhau (gây lỗi kiểu trùng tên nhưng khác danh tính!). Chỉ khai báo `mod math;` ở `lib.rs`, còn `main.rs` gọi qua `use calc_app::...`.
+2. **Dùng `pub use` để thiết kế mặt tiền API gọn gàng (Re-exporting):** Thay vì bắt người dùng gõ `my_crate::internal::parser::v2::parse`, hãy `pub use internal::parser::v2::parse;` ngay ở gốc `lib.rs`.
+3. **Dùng `pub(crate)` cho các hàm dùng chung nội bộ:** Khi một hàm cần chia sẻ giữa các module trong cùng dự án nhưng **không** muốn lộ ra ngoài như API công khai, `pub(crate)` là lựa chọn hoàn hảo.
+4. **Ưu tiên đường dẫn tuyệt đối `crate::...` trong nội bộ thư viện:** Đường dẫn bắt đầu bằng `crate::` luôn ổn định khi bạn di chuyển tệp sang thư mục khác, dễ đọc hơn chuỗi `super::super::...`.
+
+**Kiểm tra nhanh.** Trong dự án `calc_app` ở trên, nếu bạn xóa dòng `pub use math::add;` khỏi `src/lib.rs` mà chỉ giữ lại `mod math;`, liệu `src/main.rs` có còn gọi được `calc_app::math::add(2, 3)` không — và vì sao?
+
+---
 
 ## Bài tập
 

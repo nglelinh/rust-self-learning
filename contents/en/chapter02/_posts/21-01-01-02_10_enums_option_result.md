@@ -10,7 +10,22 @@ categories:
 lesson_type: required
 ---
 
-Enums make state explicit. `Option` and `Result` are the everyday tools for safe absence and failure. This lesson teaches how to model a domain with enums, how to compose `Option`/`Result`, and how `match` ties everything together.
+Tony Hoare famously called his 1965 invention of the **null reference** his *"billion-dollar mistake"*—responsible for countless `NullPointerException` crashes and C segfaults across half a century of software. Rust refuses to add `null` to the language. Instead, absence and failure are ordinary, type-checked **algebraic data types (`enum`)**: `Option<T>` says *"a value might be absent"*, and `Result<T, E>` says *"this operation might fail with error `E`"*.
+
+This lecture unlocks Rust’s richest modeling tool: enums that carry per-variant payloads, how `Option<T>` and `Result<T, E>` compose cleanly with `?` and combinators (`map`, `and_then`), and a delightful compiler trick—the **Null Pointer Optimization (NPO)**—that makes `Option<&T>` cost literally **zero extra bytes** in memory!
+
+---
+
+## Background Knowledge Map: Algebraic Data Types, Tagged Unions, and Zero-Cost Safety
+
+Four computer-science ideas explain why Rust’s `enum` is far more powerful than C/Java enums:
+
+1. **Sum Types (Tagged Unions):** A `struct` is a *product type* (has field A **AND** field B). A Rust `enum` is a *sum type* (is either variant A with payload $$P_A$$ **OR** variant B with payload $$P_B$$). In memory, an enum occupies `discriminant tag + max(variant sizes)` plus alignment padding.
+2. **Null Pointer Optimization (NPO):** Because a Rust reference `&T` or `Box<T>` is *guaranteed* never to be address `0x0`, `rustc` represents `Option<&T>::None` as the bit pattern `0x0` and `Some(ptr)` as the raw pointer itself—so `std::mem::size_of::<Option<&T>>() == 8` bytes (zero overhead compared to a nullable C pointer, yet 100% checked at compile time!).
+3. **Explicit Absence & Recoverable Errors (`Option` & `Result`):** You cannot accidentally dereference a `None` or ignore an `Err`—the type system forces you to unwrap, match, or propagate explicitly.
+4. **Early-Return Propagation (`?`):** The `?` operator is pure syntactic sugar over `match`: on `Ok(v)` it yields `v`; on `Err(e)` it immediately converts `e` via `From` and returns `Err(e.into())` from the enclosing function.
+
+---
 
 ## 60-minute teaching plan
 
@@ -199,6 +214,44 @@ Mention: when cases grow, prefer `match` for clarity and exhaustiveness.
 1. Using `Option` when you need to explain failure (should be `Result`).
 2. Returning `bool` to indicate success/failure (lose error details).
 3. Using strings for errors everywhere (hard to test and pattern match).
+
+---
+
+### Worked Line-by-Line Trace (Memory Size & `?` Desugaring): Tracing `Option`, `Result`, and `?`
+
+First, check the exact memory layout of two enums on a 64-bit CPU:
+- `Option<u64>`: needs a tag byte + 7 padding bytes + 8-byte `u64` = **16 bytes**.
+- `Option<&u64>`: uses address `0x0` for `None` (NPO!) = **8 bytes** (zero extra memory!).
+
+Now trace how a two-line function using `?` desugars step by step:
+
+```rust
+fn parse_and_double(raw: &str) -> Result<i32, std::num::ParseIntError> {
+    let n = raw.trim().parse::<i32>()?; // `?` desugars to the exact match below!
+    Ok(n * 2)
+}
+// Desugared equivalent of line 2:
+// let n = match raw.trim().parse::<i32>() {
+//     Ok(val) => val,
+//     Err(e)  => return Err(e.into()), // Early return! Line 3 never runs.
+// };
+```
+
+| Input `raw` | `raw.trim().parse::<i32>()` | Action of `?` | Final Return Value |
+| :--- | :--- | :--- | :--- |
+| `" 21 "` | `Ok(21)` | Extracts `n = 21`, continues to `Ok(n * 2)` | `Ok(42)` |
+| `"abc"` | `Err(ParseIntError)` | Immediately returns `Err(...)` (skips `n * 2`) | `Err(ParseIntError)` |
+
+### Deep-Dive Explanation: Four Patterns for Clean Enum, `Option`, and `Result` Code (Read Slowly)
+
+1. **Model states as an `enum`, not a soup of booleans:** Replace `struct State { is_loading: bool, error: Option<String>, data: Option<Data> }` (which allows contradictory states like loading *and* error!) with `enum State { Loading, Failed(String), Ready(Data) }`.
+2. **Use `?` for linear happy-path code:** Chaining three fallible steps with `?` reads top-to-bottom like synchronous code while preserving exact error propagation at every step.
+3. **Reach for combinators (`map`, `and_then`, `unwrap_or`) for short one-liners:** `opt.map(|x| x * 2).unwrap_or(0)` is cleaner than a 4-line `match`, while complex multi-branch logic still reads clearest as an explicit `match`.
+4. **Bridge `Option` to `Result` cleanly with `.ok_or(...)` / `.ok_or_else(...)`:** Use `.ok_or_else(|| ...)` whenever constructing the error allocates a `String`, so the allocation runs *only* on the error path.
+
+**Quick check.** On a 64-bit machine, why does `std::mem::size_of::<Option<Box<i32>>>()` equal **8 bytes** instead of 16 bytes?
+
+---
 
 ## Exercises
 

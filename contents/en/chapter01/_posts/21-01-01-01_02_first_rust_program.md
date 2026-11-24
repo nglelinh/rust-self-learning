@@ -10,7 +10,21 @@ categories:
 lesson_type: required
 ---
 
-This lesson focuses on Rust syntax you will touch constantly: bindings, mutability, basic IO, and simple control flow. The goal is not to memorize syntax, but to build a reliable habit: write a small program, make it correct, make errors explicit.
+In C, Python, or JavaScript, every variable is born mutable by default—and some of the nastiest production bugs happen when a variable is quietly overwritten three hundred lines away from where it was created. Rust flips that default on its head: **every `let` binding is immutable unless you explicitly opt in with `mut`**, turning mutability into a visible contract with both the compiler and your future self.
+
+This lecture walks through your first real Rust program and draws a razor-sharp line between three concepts beginners frequently blur—**immutability (`let`)**, **in-place mutation (`let mut`)**, and **shadowing**—alongside Rust’s compile-time-checked formatting macros (`Display` vs. `Debug`).
+
+---
+
+## Background Knowledge Map: Immutability, Shadowing, and Compile-Time Formatting
+
+Beneath the clean syntax of a twenty-line Rust program sit three deliberate systems-programming design choices:
+
+1. **Immutability by Default:** Making variables immutable unless marked `mut` shrinks the mental surface area of every function, enables aggressive compiler register optimizations, and lays the foundation for safe shared references (`&T`) in Chapter 2.
+2. **In-Place Mutation (`mut`) vs. Shadowing (`let`):** Writing `let mut x = 1; x = 2;` overwrites the **same stack slot** and locks the type forever. **Shadowing** (`let x = "42"; let x: i32 = x.parse()?;`) allocates a **brand-new binding** that hides the previous name, allowing a type transformation while keeping the final value immutable.
+3. **Compile-Time Macros (`println!`, `dbg!`) & Formatting Traits (`Display` vs. `Debug`):** The `!` signals a macro whose format string is verified at compile time (eliminating C `printf` format-string vulnerabilities). `{}` invokes user-facing `Display`, while `{:?}` invokes developer-facing `Debug`.
+
+---
 
 ## 60-minute teaching plan
 
@@ -217,6 +231,42 @@ Students often parse the raw line including `\n`. Teach: `trim()` before parsing
 ### 3. Overusing `unwrap()`
 
 Rule for this course: in CLI programs, `unwrap()` is a last resort. Prefer `match` or `?`.
+
+---
+
+### Worked Line-by-Line Trace (Stack Slots & Types): `mut` vs. Shadowing on the Stack
+
+Trace each line of this short program to see what physically happens on the stack:
+
+```rust
+fn main() {
+    let mut count: i32 = 10;   // Stack slot #1 (4 bytes): count = 10
+    count += 5;                // Overwrites slot #1 IN PLACE: count = 15 (still i32)
+
+    let raw = "  42  ";        // Stack slot #2 (&str, 16 bytes): ptr + len=6
+    let raw = raw.trim();      // Stack slot #3 (&str, 16 bytes): ptr' + len=2 (SHADOWING!)
+    let raw: i32 = raw.parse().unwrap(); // Stack slot #4 (i32, 4 bytes): 42 (TYPE CHANGED!)
+    println!("count={count}, raw={raw}");
+}
+```
+
+| Step | Visible Name | Static Type | Stack Memory Action |
+| :--- | :--- | :--- | :--- |
+| Lines 2–3 | `count` (`mut`) | `i32` (locked) | Mutates the exact same 4-byte stack slot (`10` $$	o$$ `15`) |
+| Line 5 | `raw` (1st) | `&str` | Creates immutable fat pointer `(ptr, 6)` |
+| Line 6 | `raw` (2nd) | `&str` | Creates a **new** immutable binding `(ptr', 2)` hiding the old one |
+| Line 7 | `raw` (3rd) | `i32` | Creates a **new** 4-byte integer binding `42`—type changed cleanly |
+
+### Deep-Dive Explanation: Four Everyday Rules for Bindings and Output (Read Slowly)
+
+1. **Start with `let`; add `mut` only when mutation is genuinely needed:** If you mark a variable `mut` and never mutate it, `rustc` warns you immediately so your code never lies about its intent.
+2. **Use shadowing for data-cleaning pipelines:** Turning raw text into a trimmed slice and then into a parsed integer under one name avoids cluttered names like `input_str` / `input_num` and leaves the parsed value safely immutable.
+3. **Choose `{}` for users and `{:?}` (or `{:#?}`) for debugging:** Collections (`Vec`, tuples) and custom structs deliberately do not implement `Display` because there is no single "human" format; derive `#[derive(Debug)]` to inspect them effortlessly.
+4. **Reach for `dbg!(&val)` during quick investigations:** Unlike `println!`, `dbg!` prints file name, line number, expression text, and value to `stderr` while returning the value inline.
+
+**Quick check.** If you write `let mut s = "42"; s = s.parse::<i32>().unwrap();` (omitting `let` on the second statement), will `rustc` accept or reject it—and why?
+
+---
 
 ## Exercises
 

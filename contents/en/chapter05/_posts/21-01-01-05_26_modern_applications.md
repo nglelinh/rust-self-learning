@@ -10,7 +10,28 @@ categories:
 lesson_type: optional
 ---
 
-This optional lesson does not reteach threads, channels, or `async`/`await`. It follows those tools into the systems that made async Rust a default cloud language between 2022 and 2026: Cloudflare Pingora, Tokio’s HTTP stack after `hyper` 1.0, and the observability layer (`tokio-console`, `tracing`) that production teams actually page on.
+For years, high-performance cloud infrastructure—reverse proxies, load balancers, service meshes, and HTTP/3 gateways—belonged almost exclusively to C and C++ (NGINX, Envoy, HAProxy), with teams paying an endless tax in memory-safety CVEs and tail-latency debugging. Between 2022 and 2026, **async Rust** quietly rewrote that landscape: Cloudflare replaced NGINX across its global edge with **Pingora** (serving over **1 trillion requests per day** with 70% less CPU and 67% less memory!), `hyper` 1.0 stabilized Rust’s zero-copy HTTP core, and `tracing` unified structured async observability across millions of concurrent spans.
+
+This optional capstone follows Chapter 5’s building blocks—Tokio tasks, bounded channels, cancellation, and structured spans—straight into the production cloud systems running the modern internet.
+
+---
+
+## Background Knowledge Map: Production Async Rust Infrastructure (2022–2026)
+
+### 1. Multi-Threaded Work-Stealing Proxies (Cloudflare Pingora)
+Classic NGINX spawns isolated OS worker processes that cannot easily share connection pools across cores. **Pingora** runs a single multi-threaded **Tokio** process with work-stealing scheduling and lock-free/shared `Arc` connection pools—improving upstream connection reuse while eliminating C buffer overflows by construction.
+- **Core questions:** How does shared-process async Rust cut both memory usage and tail latency compared to multi-process C?
+- **Real-world reach:** CDN edge proxies, API gateways, L4/L7 load balancers, and Kubernetes ingress controllers.
+
+### 2. Modular HTTP & Middleware Composition (`hyper` 1.0 + `tower` + `axum`)
+`hyper` 1.0 decoupled low-level HTTP/1 & HTTP/2 framing from specific runtimes and high-level routers. On top of it, `tower::Service` models every middleware—timeouts, rate limits, retries, load shedding—as a composable generic wrapper around `async fn call(req) -> Result<resp, err>`.
+- **Core questions:** How does `tower` compose timeouts, concurrency limits, and tracing with zero dynamic allocation per middleware layer?
+- **Real-world reach:** `axum` web backends, `tonic` gRPC services, and `reqwest` HTTP clients.
+
+### 3. Span-Based Async Observability (`tracing`)
+Plain `println!` or thread-local logs turn into unreadable soup when 10,000 async tasks interleave on 8 OS threads! **`tracing`** attaches structured **spans** (`request_id`, `user_id`) directly to each `Future` via `.instrument(span)` so every log line automatically inherits its exact async causal context—even as the task hops across worker threads!
+- **Core questions:** Why do thread-local loggers fail in async Rust, and how does `tracing::Instrument` fix them?
+- **Real-world reach:** OpenTelemetry distributed tracing, latency flamegraphs, and production incident debugging.
 
 ## 60-minute teaching plan
 
@@ -166,6 +187,41 @@ Structured concurrency is still a discipline, not a language guarantee. Forgetti
 Head-of-line blocking on a single task that does CPU work will stall a worker thread. The production fix is `spawn_blocking` or a dedicated pool — Chapter 5’s “do not do CPU on the async thread” rule at scale.
 
 Reflect: how would you shut down a Pingora-like proxy so in-flight requests finish, new accepts stop, and idle upstreams drop — using only channels, `Notify`, and `Drop`?
+
+---
+
+## Worked Examples & Deep Dive
+
+### Worked Example 1: Why Thread-Local Logging Fails in Async Rust vs. `tracing::Instrument`
+
+Trace two concurrent HTTP requests (`req_1` and `req_2`) multiplexing on **Worker Thread 1**:
+
+| Event | Naive Thread-Local Logger | `tracing` + `.instrument(span)` |
+|---|---|---|
+| `t=1`: `req_1` starts on Thread 1 | Sets thread-local `id=1` | Enters `span(req_1)` on poll start |
+| `t=2`: `req_1` hits `.await` (yields) | Thread-local still `id=1`! | **Exits `span(req_1)` automatically on `Poll::Pending`!** |
+| `t=3`: `req_2` resumes on Thread 1 | Logs under **`id=1` (CORRUPTED!)** | **Enters `span(req_2)` → logs accurately under `req_2` ✓** |
+| `t=4`: `req_1` resumes on **Thread 4** | Thread 4 has **no `id`!** | **Enters `span(req_1)` on Thread 4 → intact across threads ✓** |
+
+### Worked Example 2: Back-of-the-Envelope Resource Math — Threads vs. Async Tasks at 50,000 Connections
+
+Compare holding **50,000 idle TLS/HTTP connections** on a 16-core server:
+- **1 OS thread per connection** (2 MB default stack): `50,000 × 2 MB = 100 GB RAM` just in stack reservations + massive kernel scheduler thrashing.
+- **Async Rust (Tokio + `hyper`)** (~4 KB per task + 16 worker threads): `50,000 × 4 KB ≈ 200 MB RAM` (**500× less memory!**) + zero kernel thread-context switches between tasks on the same core!
+
+### Deep-Dive Explanation: How Production Async Rust Stays Fast Under Load (Read Slowly)
+
+#### Step 1: Bound concurrency at the front door (`tower::limit::ConcurrencyLimit` / `Semaphore`)
+Accepting unlimited concurrent requests turns a brief downstream slowdown into an OOM crash. Always place a hard concurrency cap and load-shedding timeout at the outermost middleware layer.
+
+#### Step 2: Share pools with `Arc`, never clone heavy clients per request
+Database pools (`sqlx::PgPool`), HTTP clients (`reqwest::Client`), and TLS configs are designed around cheap internal `Arc` cloning so connection pools stay warm across all worker threads.
+
+#### Step 3: Instrument every spawned task explicitly
+When you call `tokio::spawn(work.instrument(tracing::info_span!("bg_job", id)))`, the child task carries its parent’s structured trace ID cleanly into OpenTelemetry/Jaeger without losing causality.
+
+#### Step 4: Measure tail latency (`p99`), not just averages
+In cooperative async runtimes, one stray 50 ms blocking call on a worker thread might barely move average latency while blowing up `p99` latency for every task parked behind it. Use `tokio-console` and span-busy-time histograms to catch executor stalls immediately.
 
 ## Exercises
 

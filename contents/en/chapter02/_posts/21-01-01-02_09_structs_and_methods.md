@@ -10,7 +10,22 @@ categories:
 lesson_type: required
 ---
 
-Structs help you model data with invariants, and `impl` blocks help you keep behavior close to the data. This lesson teaches how to design structs that cannot represent invalid state, and how to choose method receivers intentionally.
+In loosely typed codebases, a configuration object or bank account is often just a bag of public fields where any function anywhere can set `port = 0` or `balance = -500`—forcing every downstream function to repeat defensive `if` checks forever. Rust turns `struct` definitions and module privacy into a **compile-time invariant fortress**: keep the fields private, validate *once* inside a constructor (`new`), and from that moment on, holding a value of that type *proves* the invariant holds!
+
+This lecture explores how structs lay out data contiguously in memory, how `impl` blocks attach methods with exact ownership receivers (`&self`, `&mut self`, `self`), and how encapsulation makes illegal states unrepresentable.
+
+---
+
+## Background Knowledge Map: Data Layout, Method Receivers, and Type-Driven Invariants
+
+Four core ideas connect Rust structs directly to systems engineering and clean API design:
+
+1. **Inline Contiguous Memory Layout (Zero Hidden Indirection):** Unlike Java or Python objects (where every object reference is a heap pointer), a Rust `struct` stores its fields **inline** where it is declared (on the stack or packed directly inside a `Vec<MyStruct>`), delivering superb CPU cache locality.
+2. **Three Exact Method Receivers (`&self`, `&mut self`, `self`):** Every method explicitly declares its ownership contract: `&self` reads without moving, `&mut self` mutates in place exclusively, and `self` *consumes* the value (ideal for state-machine transitions or builder `.build()` methods so the old state can never be reused!).
+3. **Encapsulation via Module Privacy:** Struct fields are private outside their defining module by default. Pairing private fields with a fallible constructor (`fn new(...) -> Result<Self, Err>`) guarantees no caller can ever forge an invalid instance.
+4. **Automatic Referencing & Dereferencing:** When calling `cfg.port()`, `rustc` automatically inserts `&`, `&mut`, or `*` as needed to match the method’s receiver signature.
+
+---
 
 ## 60-minute teaching plan
 
@@ -187,6 +202,51 @@ fn config_rejects_zero_port() {
 1. Making fields public too early.
 2. Letting parsing and validation leak everywhere.
 3. Using `String` errors when a small enum would be clearer.
+
+---
+
+### Worked Line-by-Line Trace (Ownership Receivers & Invariants): `&self` vs. `&mut self` vs. `self`
+
+Trace how each method receiver interacts with a validated `Port` struct and ownership:
+
+```rust
+pub struct Port(u16); // Private inner field: nobody outside can write `Port(0)`!
+
+impl Port {
+    pub fn new(n: u16) -> Result<Self, &'static str> {
+        if n == 0 { Err("port 0 is reserved") } else { Ok(Self(n)) }
+    }
+    pub fn number(&self) -> u16 { self.0 }        // Shared borrow: caller keeps ownership
+    pub fn bump(&mut self) { self.0 += 1; }       // Exclusive borrow: mutates in place
+    pub fn into_u16(self) -> u16 { self.0 }       // Takes ownership: consumes `Port`!
+}
+
+fn main() {
+    let mut p = Port::new(8080).unwrap(); // Stack: 2 bytes (`8080`), invariant n != 0 PROVED!
+    println!("{}", p.number());           // Borrows `&p` -> prints 8080; `p` still alive
+    p.bump();                             // Borrows `&mut p` -> mutates to 8081
+    let raw = p.into_u16();               // MOVES `p` -> returns 8081
+    // println!("{}", p.number());        // COMPILE ERROR if Port is non-Copy!
+}
+```
+
+| Method Call | Receiver Type | Stack / Ownership Effect | Can Caller Still Use `p` Afterward? |
+| :--- | :--- | :--- | :--- |
+| `Port::new(8080)` | Associated fn (no `self`) | Validates `8080 != 0`, returns `Ok(Port(8080))` | Creates `p` |
+| `p.number()` | `&self` | Temporary shared borrow | **Yes** |
+| `p.bump()` | `&mut self` | Temporary exclusive borrow; `8080` $$	o$$ `8081` | **Yes** |
+| `p.into_u16()` | `self` (by value) | Moves `p` into method and consumes it | **No** (if `Port` is not `Copy`) |
+
+### Deep-Dive Explanation: Four Rules for Designing Idiomatic Rust Structs (Read Slowly)
+
+1. **Validate at the boundary, trust inside the core:** Once `Port::new` returns `Ok(p)`, no internal function taking `Port` ever needs `if port == 0` checks again.
+2. **Default to `&self`; escalate to `&mut self` or `self` deliberately:** Taking `self` by value is a superpower for *typestate* APIs (e.g., `Connection::close(self)` makes calling `conn.send()` after closing a compile-time error!).
+3. **Derive standard traits thoughtfully (`Debug`, `Clone`, `PartialEq`):** Keep `Copy` only for small, cheap stack types whose duplication is semantically trivial—never derive `Copy` on types representing unique handles or state machines.
+4. **Watch out for struct update syntax `..other` moving fields:** Writing `Config { port: 9000, ..base }` *moves* any non-`Copy` fields (like `String` hostnames) out of `base`, partially invalidating `base`.
+
+**Quick check.** Why is marking `pub struct Port(pub u16);` dangerous if your application relies on the invariant that `port != 0`?
+
+---
 
 ## Exercises
 

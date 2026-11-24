@@ -10,7 +10,25 @@ categories:
 lesson_type: required
 ---
 
-Everything the kernel provides to user space — file I/O, process control, networking, memory mapping — is exposed through system calls. This lesson explains how syscalls work at the hardware level, how `libc` wraps them, and how Rust's `nix` crate gives you safe, idiomatic access to the full POSIX API.
+Every safe Rust abstraction we have used so far—`File::open`, `TcpStream::connect`, `Command::spawn`, `Instant::now`—eventually hits the exact same hardware gate: a **system call**. Your user-space code runs in CPU Ring 3, strictly forbidden from touching disk controllers, network cards, or other processes' memory. Whenever your program needs the outside world, it loads arguments into specific CPU registers and executes a single privileged trap instruction (`syscall` on x86-64, `svc #0` on ARM64) to ask the kernel (Ring 0) to perform the work on its behalf.
+
+In this lesson, we peel away the layers between `std` and the kernel: raw `libc` bindings, safe POSIX wrappers in the `nix` crate, `errno` translation, and watching every syscall live with `strace`.
+
+## Background Knowledge Map: What Layers Sit Between Rust Code and the OS Kernel?
+
+Understanding the syscall stack lets you debug production issues with `strace` and call OS features that `std` does not yet wrap:
+
+1. **CPU Privilege Rings & the Syscall ABI**:
+   Modern CPUs enforce hardware isolation between **user space** (unprivileged) and **kernel space** (privileged). On Linux x86-64, a syscall is *not* a normal C function call: the kernel reads the **syscall number** from `rax` (e.g., `0 = read`, `1 = write`, `2 = open`, `60 = exit`), up to 6 arguments from `rdi, rsi, rdx, r10, r8, r9`, and returns the result in `rax` (values in `-4095..-1` encode negated error codes like `-EACCES = -13`).
+
+2. **The `libc` Layer & `errno` Convention**:
+   Most Unix programs do not invoke `syscall` directly—they call thin C wrappers in `libc` (glibc/musl on Linux, `libSystem` on macOS—where macOS does *not* even guarantee stable raw syscall numbers!). When the kernel returns a negative error like `-13`, `libc` stores `13` (`EACCES`) in the thread-local variable `errno` and returns `-1` to the caller.
+
+3. **Zero-Cost Safe Wrappers (`nix` & `rustix`)**:
+   Calling `libc::open` directly in Rust requires `unsafe`, raw C pointers, integer bitmasks, and manual `errno` checks. Crates like **`nix`** (safe POSIX wrappers over `libc`) and **`rustix`** (direct safe syscalls/libc) turn raw integer flags into type-safe `bitflags!`, wrap file descriptors in RAII `OwnedFd` (closing automatically on `Drop`), and convert `-1` + `errno` into idiomatic `Result<T, Errno>`.
+
+4. **Dynamic Syscall Observation (`strace` / `dtruss`)**:
+   Because every external side effect must cross the syscall boundary, running `strace ./my_binary` gives you X-ray vision into any compiled binary—even without source code—revealing exact files opened, bytes written, failed permissions, and unexpected blocking calls.
 
 ## 60-minute teaching plan
 
@@ -237,6 +255,36 @@ Reading `strace` output is one of the most effective ways to understand what you
 - Identify unexpected `stat()` calls slowing down startup.
 - Debug permission errors (look for `EACCES` or `EPERM` returns).
 - Understand why a program hangs (look for blocking `futex` or `read` calls).
+
+### Deep-Dive Explanation: Tracing `write(1, "hi\n", 3)` Through CPU Registers, `libc`, and `nix::Result` (Read Slowly)
+
+Let us trace a single 3-byte write to standard output—and one failed permission check—all the way from Rust down to the exact x86-64 CPU registers and back up into a safe `Result`.
+
+#### Trace 1: Successful `write(1, "hi\n", 3)` on Linux x86-64
+
+Suppose our byte buffer `"hi\n"` (`[0x68, 0x69, 0x0A]`) sits at virtual address `0x7fff_1234_0000`.
+
+1. **Before `syscall` instruction (CPU Registers loaded by `libc::write`)**:
+   | Register | Role in Linux x86-64 Syscall ABI | Exact Value |
+   | :---: | :--- | :--- |
+   | `rax` | Syscall number (`SYS_write`) | `1` |
+   | `rdi` | Arg 1: `fd` (`STDOUT_FILENO`) | `1` |
+   | `rsi` | Arg 2: `buf` pointer | `0x7fff_1234_0000` |
+   | `rdx` | Arg 3: `count` (bytes) | `3` |
+2. **Hardware Trap (`syscall`)**: CPU switches from Ring 3 → Ring 0, validates `fd = 1` in the current process's FD table, copies 3 bytes to the terminal driver, and places the number of bytes written (`3`) into `rax`.
+3. **Return to User Space**:
+   - `libc::write` sees `rax = 3 >= 0` → returns `3_isize`.
+   - `nix::unistd::write` wraps `3_isize` as **`Ok(3)`**.
+
+#### Trace 2: Failed `open("/etc/shadow", O_RDONLY)` (`EACCES`)
+
+Now trace what happens when a non-root user tries to open `/etc/shadow`:
+
+1. **Kernel check fails**: Permission bits are `0640` (`root:shadow`), so the kernel rejects the request and returns **`rax = -13`** (where `13 == EACCES`).
+2. **`libc` translation**: `libc` checks if `rax` is in `[-4095, -1]`. Because `-13` is in that range, `libc` sets thread-local **`errno = 13`** and returns **`-1`** to Rust!
+3. **Why raw `libc` is error-prone vs. `nix`**:
+   - In raw `libc`, if you forget to check `ret < 0` and pass `fd = -1` into `read(-1, ...)`, you silently cascade into `EBADF`—or worse, if you call another `libc` function before reading `errno`, `errno` gets overwritten!
+   - In `nix::fcntl::open`, the wrapper immediately checks `res == -1`, reads `Errno::last()` atomically, and returns **`Err(nix::errno::Errno::EACCES)`**—impossible to ignore thanks to `#[must_use]` on `Result`.
 
 ## In-class exercises
 

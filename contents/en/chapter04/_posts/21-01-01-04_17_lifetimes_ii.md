@@ -10,7 +10,30 @@ categories:
 lesson_type: required
 ---
 
-Once you store references inside structs, lifetimes become part of your **type design**. This lesson teaches how to build borrowed "view" types over buffers, how lifetime parameters on structs interact with methods, and how to avoid self-referential traps that even experienced Rust programmers hit.
+Imagine parsing a 2-gigabyte CSV log file with 20 million rows. If your parser copies every single column into its own heap-allocated `String`, your program performs **100 million `malloc` calls** and burns gigabytes of RAM just duplicating bytes you already have in memory! Instead, you want a **zero-copy view struct**—`struct CsvRow<'a>`—whose fields are lightweight `&'a str` slices pointing directly into the original input buffer, allocating **zero extra bytes** on the heap.
+
+The moment you put a reference inside a `struct`, however, lifetimes become part of the type’s identity. This lesson teaches you how borrowed structs work in memory, why `struct Foo<'a>` binds the struct’s lifespan to its backing buffer, how to write clean `impl<'a>` methods, and why **self-referential structs** (storing both a `String` and a `&str` into that same `String`) are rejected by Rust’s move semantics.
+
+---
+
+## Background Knowledge Map: Zero-Copy Views & Memory Ownership in Structs
+
+Three systems-programming principles explain every rule of borrowed structs.
+
+### 1. Zero-Copy Parsing & Slice Views (`&'a [u8]` / `&'a str`)
+A `&'a str` is just a 16-byte `(ptr, len)` window into an existing buffer. By storing slices inside a `struct View<'a>`, parsers (HTTP headers, JSON tokens, CSV rows) inspect gigabytes of data in place with near-zero allocation overhead.
+- **Core questions:** When does zero-copy borrowing pay off massively, and when does an owned struct (`String`) produce a much simpler API?
+- **Real-world reach:** `serde` zero-copy deserialization, `nom` parsers, `hyper` HTTP request parsing, and `polars` string views.
+
+### 2. Contagious Lifetimes in Type Design
+Once a struct carries `<'a>`, every outer struct containing it must also declare `<'a>`—signaling to the compiler that the entire view tree **cannot outlive** the backing buffer and cannot be moved into a `'static` background thread while borrowing stack data.
+- **Core questions:** How do you decouple long-lived application state from short-lived borrowed views?
+- **Real-world reach:** Separating wire-protocol parsers (borrowed) from domain entities (owned) in network services.
+
+### 3. Move Semantics & Why Self-Referential Structs Break Safety
+In Rust, moving a struct performs a shallow bitwise `memcpy` of its stack bytes to a new address. If a struct held a `String` *and* a `&str` pointing into that same `String` (or into an inline array), moving the struct could invalidate internal pointers! That is why Rust forbids safe self-referential structs—and why **byte-offset indices (`Range<usize>`)** or `Pin` are used instead.
+- **Core questions:** Why does storing `(buffer: String, span: Range<usize>)` survive moves effortlessly while `(buffer: String, slice: &'a str)` fails?
+- **Real-world reach:** AST token spans in `rustc`, lexer design, and `async` state-machine pinning.
 
 ## 60-minute teaching plan
 
@@ -399,6 +422,59 @@ Rule of thumb: **borrow for processing, own for storing**.
 4. **Lifetime subtyping**: read about `'a: 'b` (lifetime `'a` outlives `'b`) and explain when you'd need it in a view type hierarchy.
 
 ---
+
+---
+
+## Worked Examples & Deep Dive
+
+### Worked Example 1: Memory Cost of Owned `CsvRow` vs. Zero-Copy `CsvRow<'a>`
+
+Suppose a single CSV line `"alice,2026-11-24,checkout,49.99"` (31 bytes) is parsed into 4 fields:
+
+| Representation | Stack Size (64-bit) | Extra Heap Allocations | Extra Heap Bytes |
+|---|---|---|---|
+| Owned `struct OwnedRow { user: String, date: String, action: String, price: String }` | `4 × 24 = 96 bytes` | **4 `malloc` calls** | **31+ bytes** (plus allocator metadata!) |
+| Borrowed `struct CsvRow<'a> { user: &'a str, date: &'a str, action: &'a str, price: &'a str }` | `4 × 16 = 64 bytes` | **0 `malloc` calls!** | **0 bytes!** |
+
+Over 10 million rows, zero-copy `CsvRow<'a>` eliminates **40 million heap allocations** while guaranteeing at compile time that no `CsvRow<'a>` can ever outlive the backing buffer!
+
+### Worked Example 2: Tracing Why a Self-Referential Struct Fails—and the Index Fix
+
+Suppose you try to bundle a buffer and a slice into it:
+
+```rust
+// BROKEN: self-referential!
+struct BadDoc<'a> {
+    text: String,        // owns heap buffer
+    title: &'a str,      // wants to point into self.text!
+}
+```
+1. If you create `doc` inside `fn load() -> BadDoc<'a>`, returning `doc` **moves** `doc` out of `load`’s stack frame. Even though `String`’s heap bytes stay put, Rust’s borrow checker forbids moving a value *while it is borrowed* (`title` borrows `text`!).
+2. **The clean systems fix — store byte offsets (`Range<usize>`):**
+```rust
+struct GoodDoc {
+    text: String,
+    title_span: std::ops::Range<usize>, // just 2 usizes (16 bytes), no lifetime!
+}
+impl GoodDoc {
+    fn title(&self) -> &str { &self.text[self.title_span.clone()] }
+}
+```
+`GoodDoc` has **zero lifetime parameters**, moves freely across functions and threads, and still gives zero-copy `&str` access on demand!
+
+### Deep-Dive Explanation: Designing Clean Borrowed Structs Without Lifetime Hell (Read Slowly)
+
+#### Step 1: Read `struct View<'a>` as “`View` is tied to an external owner alive for `'a`”
+A lifetime parameter on a struct is a neon warning sign: *this struct does not own its data*. Keep borrowed structs short-lived—typically inside a parsing loop, request handler, or single function call.
+
+#### Step 2: Watch the `impl<'a>` method elision trap!
+Inside `impl<'a> CsvRow<'a>`, writing `fn first(&self) -> &str` ties the returned `&str` to `&self` (the borrow of the `CsvRow`), **not** to `'a` (the underlying buffer)! If you want the returned slice to outlive a temporary `CsvRow<'a>`, explicitly write `fn first(&self) -> &'a str`.
+
+#### Step 3: Never fight the compiler to build a self-referential struct
+Whenever you want a struct to own a buffer *and* hold parsed views into it, reach immediately for **byte-offset spans** (`Range<usize>`), **arena/index handles**, or **two-stage ownership** (caller owns the `String` buffer; parser produces `View<'a>`).
+
+#### Step 4: Convert to owned at architectural boundaries
+Parse hot wire formats with `View<'a>`, filter/validate in zero-copy mode, and convert only the surviving records into owned domain structs (`to_owned()`) before storing them in caches, channels, or long-lived application state.
 
 ## Exercises
 

@@ -10,7 +10,28 @@ categories:
 lesson_type: optional
 ---
 
-Rust is now an official second language in the Linux kernel. This lesson covers what changes when you write Rust without an OS underneath: no standard library, no heap by default, manual interrupt handling, and direct hardware access. It also shows how to write a Linux kernel module in Rust.
+What happens when you strip away Linux, macOS, Windows, the allocator, the file system, and `println!`—and run your Rust binary directly on a bare $2 ARM Cortex-M microcontroller or inside the Linux kernel itself? Suddenly there is no OS to catch your stack overflow, no `std::fs`, and no `Vec` unless you bring your own allocator.
+
+Remarkably, **almost everything that makes Rust great survives intact**: ownership, borrowing, zero-cost generics, traits, enums, and fearless concurrency—all packaged in the tiny, dependency-free `core` crate. That is why Rust became the first new language ever accepted alongside C in the Linux kernel and is rapidly reshaping firmware engineering.
+
+## Background Knowledge Map: What Changes When You Leave `std` Behind for Bare Metal?
+
+Writing `#![no_std]` Rust for kernels and microcontrollers rests on four core architectural pillars:
+
+1. **The Crate Triad (`core` vs. `alloc` vs. `std`)**:
+   Rust's standard library is cleanly layered:
+   - **`core`**: platform-independent, zero-OS, zero-allocation primitives (`Option`, `Result`, iterators, slices, atomics, `ptr`, `fmt`). Always available on every bare-metal chip.
+   - **`alloc`**: heap collections (`Box`, `Vec`, `String`, `Arc`) that work in `#![no_std]` as soon as you supply a `#[global_allocator]`.
+   - **`std`**: OS-dependent APIs (`File`, `TcpStream`, `Thread`, `Instant`) built on top of `core` + `alloc` + OS syscalls.
+
+2. **Memory-Mapped I/O (MMIO) & Volatile Access**:
+   Microcontrollers do not have a "LED syscall." Hardware peripherals (GPIO pins, UART serial ports, SPI buses, timers) are wired directly into fixed physical memory addresses. Writing a `1` to bit 5 of address `0x4002_0014` physically drives 3.3 V onto pin PA5. Because an optimizing compiler assumes normal RAM never changes on its own, all MMIO reads/writes **must** use `ptr::read_volatile` and `ptr::write_volatile` so LLVM never deletes or reorders hardware register accesses.
+
+3. **Type-State Hardware Drivers (`embedded-hal`)**:
+   In C firmware, accidentally reading from a GPIO pin configured as an output—or using a UART peripheral before enabling its clock—compiles silently and fails mysteriously on the circuit board. Rust's `embedded-hal` uses **zero-sized type states** (e.g., `Pin<PA5, Output<PushPull>>` vs. `Pin<PA5, Input<Floating>>`) so invalid hardware states fail to compile with zero runtime overhead.
+
+4. **Interrupts, Critical Sections & Async Bare Metal (`Embassy`)**:
+   Without an OS thread scheduler, microcontrollers respond to hardware events via **Interrupt Service Routines (ISRs)**. Modern Rust embedded frameworks like **Embassy** compile `async fn` state machines directly into interrupt-driven, zero-heap executors that automatically put the CPU into microamp deep-sleep (`WFE`/`WFI`) whenever no task is ready.
 
 ## 60-minute teaching plan
 
@@ -236,6 +257,51 @@ async fn main(spawner: Spawner) {
 ```
 
 Embassy implements cooperative multitasking with zero-cost async state machines — no heap allocation per task.
+
+### Deep-Dive Explanation: Hand-Tracing a Volatile MMIO GPIO Register Toggle (Read Slowly)
+
+Let us trace down to the exact bit level what happens inside an STM32 ARM Cortex-M microcontroller when your `#![no_std]` Rust firmware turns on an onboard LED wired to **GPIO Port A, Pin 5 (`PA5`)**—and why omitting `volatile` breaks the hardware.
+
+Suppose the chip's Reference Manual specifies:
+- `GPIOA` peripheral base address: `0x4002_0000`
+- `GPIOA_ODR` (Output Data Register) offset: `0x14` → exact address **`0x4002_0014`** (32-bit register where bit `n` controls pin `PAn`).
+- Current value of `GPIOA_ODR` before our code runs: `0x0000_0009` (pins `PA0` and `PA3` are currently HIGH, `PA5` is LOW).
+
+#### Step 1: Compute the Exact Bitmask by Hand
+
+In binary, the low 8 bits of `0x0000_0009` are:
+```text
+Bit index:   7  6  5  4  3  2  1  0
+Initial:     0  0  0  0  1  0  0  1   (0x09: PA3=1, PA0=1)
+Mask (1<<5): 0  0  1  0  0  0  0  0   (0x20: bit 5 = 32)
+```
+
+#### Step 2: Read-Modify-Write Using `read_volatile` / `write_volatile`
+
+```rust
+const GPIOA_ODR: *mut u32 = 0x4002_0014 as *mut u32;
+
+unsafe {
+    let cur = core::ptr::read_volatile(GPIOA_ODR);       // Reads 0x0000_0009
+    let next = cur | (1 << 5);                           // 0x0000_0009 | 0x0000_0020 = 0x0000_0029
+    core::ptr::write_volatile(GPIOA_ODR, next);          // Writes 0x0000_0029 -> PA5 goes 3.3V!
+}
+```
+Check the result:
+- Bitwise OR (`|`): `0000_1001 | 0010_0000 = 0010_1001` (`0x29`). Pins `PA0` and `PA3` remain untouched (`1`), while `PA5` flips from `0` to `1`!
+- To turn `PA5` back OFF without disturbing `PA0` or `PA3`, compute bitwise AND with the inverted mask `!(1 << 5) = 0xFFFF_FFDF`:
+  `0010_1001 & 1101_1111 = 0000_1001` (`0x09`).
+
+#### Step 3: Why Non-Volatile Writes Get Silently Deleted by LLVM
+
+Suppose you wrote a blinking-LED pulse without `volatile`:
+```rust
+unsafe {
+    *GPIOA_ODR = 0x29;  // Turn LED on
+    *GPIOA_ODR = 0x09;  // Turn LED off
+}
+```
+To LLVM's Dead Store Elimination (DSE) pass, writing `0x29` to a memory address and immediately overwriting it with `0x09` without reading it in between looks completely redundant—so **`rustc --release` deletes the first write entirely!** The LED never pulses. Using `write_volatile` marks every store as an observable side effect that LLVM is strictly forbidden to eliminate or reorder.
 
 ## In-class exercises
 

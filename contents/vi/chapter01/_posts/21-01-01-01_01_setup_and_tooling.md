@@ -10,7 +10,22 @@ categories:
 lesson_type: required
 ---
 
-Học lập trình Rust gắn liền với việc làm chủ vòng lặp phản hồi: viết mã, đọc thông báo của trình biên dịch và điều chỉnh nhanh chóng. Bài học này thiết lập quy trình làm việc đó và giới thiệu các công cụ cốt lõi bạn sẽ sử dụng hằng ngày.
+Nếu bạn từng mất cả buổi chiều vật lộn với `Makefile`, xung đột phiên bản `pip`/`virtualenv`, hay lỗi liên kết thư viện C/C++ trên hai máy tính khác nhau, trải nghiệm đầu tiên với **Cargo** và **rustup** sẽ giống như một luồng gió mới. Chỉ bằng hai lệnh `cargo new` và `cargo test`, toàn bộ quy trình biên dịch, tải thư viện, khóa phiên bản xác định và chạy kiểm thử tự động diễn ra đồng nhất trên Windows, macOS lẫn Linux.
+
+Bài học này đặt nền móng cho toàn bộ chuỗi công cụ Rust: phân biệt rõ vai trò của `rustup`, `rustc`, `cargo`, `rustfmt`, `clippy`, hiểu cơ chế tái lập bản dựng qua `Cargo.toml` và `Cargo.lock`, đồng thời phân biệt sâu sắc giữa biên dịch kiểm tra nhanh (`cargo check`), bản gỡ lỗi (`debug`) và bản tối ưu phát hành (`--release`).
+
+---
+
+## Bản đồ kiến thức nền: Kiến trúc chuỗi công cụ và quy trình biên dịch Rust
+
+Để làm chủ môi trường phát triển Rust ở tầm kỹ sư hệ thống, hãy hình dung bốn lớp công cụ xếp chồng lên nhau:
+
+1. **Quản lý chuỗi công cụ (`rustup`):** Cho phép cài song song nhiều phiên bản trình biên dịch (`stable`, `beta`, `nightly`) và nhiều kiến trúc đích (*target triples* như `x86_64-unknown-linux-gnu`, `wasm32-unknown-unknown`) mà không xung đột hệ thống.
+2. **Trình biên dịch lõi (`rustc` + LLVM):** Biến mã nguồn Rust qua nhiều tầng trung gian (AST $$	o$$ HIR $$	o$$ MIR để kiểm tra borrow checker $$	o$$ LLVM IR) thành mã máy bản địa (native binary) chạy trực tiếp trên CPU không cần máy ảo.
+3. **Trình quản lý gói & bản dựng (`cargo`):** Tự động giải bài toán đồ thị phụ thuộc (Semantic Versioning), ghi vết phiên bản chính xác trong `Cargo.lock` để bản dựng trên máy đồng nghiệp và trên CI/CD giống hệt từng byte.
+4. **Kiểm tra tĩnh & Định dạng (`clippy`, `rustfmt`, `rust-analyzer`):** Chuẩn hóa phong cách mã nguồn và bắt sớm hàng trăm lỗi tiềm ẩn về hiệu năng lẫn logic ngay khi bạn đang gõ phím.
+
+---
 
 ## Kế hoạch giảng dạy 60 phút
 
@@ -242,6 +257,31 @@ Một số nguyên tắc cơ bản cần nắm:
 ```bash
 cargo check
 ```
+
+---
+
+### Ví dụ truy vết từng dòng (Quy trình biên dịch & Hồ sơ Build): `cargo check` vs `cargo build` vs `--release`
+
+Giả sử bạn có dự án `hello_cargo` với một hàm cộng đơn giản và lần lượt chạy ba lệnh sau. Quan sát chính xác những tầng nào của `rustc` được kích hoạt và tệp đầu ra nằm ở đâu:
+
+| Lệnh Cargo | Kiểm tra kiểu & Borrow Checker (MIR) | Sinh mã máy LLVM & tối ưu (`opt-level`) | Tệp thực thi đầu ra | Hành vi tràn số nguyên (`u8`: `255 + 1`) |
+| :--- | :--- | :--- | :--- | :--- |
+| `cargo check` | **Có** (đầy đủ 100%) | **Không** (bỏ qua codegen nên rất nhanh) | Không sinh binary | — |
+| `cargo build` | **Có** | Có (`opt-level = 0`, kèm debug symbols) | `target/debug/hello_cargo` | **Panic** ngay lúc chạy để báo lỗi |
+| `cargo build --release` | **Có** | Có (`opt-level = 3`, tối ưu tối đa) | `target/release/hello_cargo` | **Wrap-around** (quay vòng về `0`, không panic) |
+
+Quan sát cột cuối cùng! Sự khác biệt giữa `debug` và `release` không chỉ là tốc độ chạy (thường chênh nhau **10–100 lần**), mà còn thay đổi hành vi kiểm tra tràn số lúc chạy — đó là lý do khi đo hiệu năng (benchmark) bạn **luôn** phải dùng `--release`.
+
+### Khung giải thích: Bốn kỷ luật về chuỗi công cụ mọi lập trình viên Rust cần nhớ (nên đọc chậm)
+
+1. **Tách rõ `Cargo.toml` (ý định) và `Cargo.lock` (thực tế đã khóa):** `Cargo.toml` khai báo dải phiên bản cho phép (ví dụ `rand = "0.8"`), còn `Cargo.lock` ghi chính xác phiên bản và mã băm SHA-256 của từng gói phụ thuộc. Với ứng dụng binary, **luôn commit `Cargo.lock`** để đảm bảo bản dựng tái lập 100%.
+2. **Dùng `cargo check` trong vòng lặp sửa lỗi:** Khi đang sửa lỗi kiểu hoặc borrow checker, `cargo check` chạy nhanh gấp nhiều lần `cargo build` vì bỏ qua bước sinh mã máy LLVM nặng nề.
+3. **Tin cậy `cargo clippy` như người đồng nghiệp soát mã khó tính:** Clippy bắt được các đoạn mã tuy hợp lệ nhưng thừa cấp phát Heap (như `.clone()` không cần thiết) hoặc không đúng tinh thần idiomatic Rust.
+4. **Không bao giờ đánh giá tốc độ Rust bằng bản `debug`:** Bản `debug` tắt toàn bộ tối ưu hóa vòng lặp và inline để hỗ trợ trình gỡ lỗi, nên chậm hơn rất nhiều so với bản `--release`.
+
+**Kiểm tra nhanh.** Nếu bạn thêm thư viện `serde = "1.0"` vào `Cargo.toml` của một ứng dụng CLI (binary crate), bạn nên commit `Cargo.lock` lên Git hay đưa nó vào `.gitignore` — và vì sao?
+
+---
 
 ## Bài tập trên lớp (10 đến 15 phút)
 

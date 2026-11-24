@@ -10,7 +10,25 @@ categories:
 lesson_type: required
 ---
 
-Collections are where ownership, borrowing, and iteration meet in day-to-day Rust. This lesson teaches the most-used collections, how to iterate correctly, and how to avoid borrow checker issues when updating maps.
+In Python or Java, looping over a list with `for x in items` hides a quiet ambiguity: are you borrowing references, mutating in place, or consuming the collection? And if you modify a collection while iterating over it, you risk a `ConcurrentModificationException` at runtime. In Rust, **collections and iterators obey the exact same ownership and borrowing rules you learned in Chapter 2**—making iterator invalidation impossible at compile time while compiling high-level iterator chains down to hand-tuned C-speed loops!
+
+This lecture maps Rust’s three workhorse standard collections (`Vec<T>`, `HashMap<K, V>`, `BTreeMap<K, V>`), traces the exact difference between the three iteration modes (`&v`, `&mut v`, `v`), and shows how zero-cost iterator adapters and the `HashMap::entry` API write cleaner, faster code.
+
+---
+
+## Background Knowledge Map: Memory Complexity, Ownership in Loops, and Zero-Cost Iterators
+
+Four systems fundamentals govern collections and iteration in Rust:
+
+1. **Choosing the Right Data Structure (`Vec`, `HashMap`, `BTreeMap`):**
+   - `Vec<T>`: contiguous heap array; O(1) indexed access & amortized O(1) push; unbeatable CPU cache locality.
+   - `HashMap<K, V>`: hash table (SipHash by default for HashDoS resistance); O(1) average lookup; **unordered** iteration.
+   - `BTreeMap<K, V>`: cache-friendly B-tree; O($$\log n$$) lookup; **always sorted by key** and supports range queries (`range(a..b)`).
+2. **Three Iteration Modes = Three Ownership Contracts:** `for x in &v` calls `.iter()` (yields `&T`, keeps `v`); `for x in &mut v` calls `.iter_mut()` (yields `&mut T`, mutates elements in place); `for x in v` calls `.into_iter()` (yields owned `T`, **consumes `v`**!).
+3. **Lazy, Zero-Cost Iterator Chains:** Adapters like `.filter()`, `.map()`, and `.take()` allocate **zero intermediate `Vec`s**—they fuse into a single tight machine-code loop only when driven by a consumer like `.collect()` or `.sum()`.
+4. **The `Entry` API (Single-Lookup Mutation):** `map.entry(key).or_insert(0)` hashes `key` **once** instead of twice (unlike checking `contains_key` followed by `insert`), avoiding both redundant hashing and borrow-checker conflicts.
+
+---
 
 ## 60-minute teaching plan
 
@@ -202,6 +220,50 @@ fn top_k_is_deterministic() {
 1. Printing a `HashMap` and expecting stable order.
 2. Iterating by value and accidentally moving your collection.
 3. Updating `HashMap` counts without `entry`.
+
+---
+
+### Worked Line-by-Line Trace (Ownership in Loops & `HashMap::entry`): Comparing All 3 `for` Modes
+
+Trace ownership and heap state across all three loop forms on a `Vec<String>` and a `HashMap`:
+
+```rust
+use std::collections::HashMap;
+
+fn main() {
+    let mut words = vec![String::from("rust"), String::from("safe")];
+
+    for w in &words {             // 1) BORROWED READ: `w: &String` (words stays owned & intact)
+        println!("read: {w}");
+    }
+    for w in &mut words {         // 2) BORROWED WRITE: `w: &mut String` (mutates in place!)
+        w.push('!');
+    }
+    let mut counts: HashMap<String, usize> = HashMap::new();
+    for w in words {              // 3) OWNED MOVE: `w: String` (`words` is CONSUMED here!)
+        *counts.entry(w).or_insert(0) += 1; // Moves `w` into map with ZERO extra `.clone()`!
+    }
+    // println!("{words:?}");     // COMPILE ERROR E0382: `words` was moved into the loop!
+    println!("{counts:?}");       // {"rust!": 1, "safe!": 1}
+}
+```
+
+| Loop Form | Trait Method Called | Type of `w` | Heap Clones? | Is `words` Usable After Loop? |
+| :--- | :--- | :--- | :--- | :--- |
+| `for w in &words` | `(&words).into_iter()` (`iter`) | `&String` | 0 | **Yes** |
+| `for w in &mut words` | `(&mut words).into_iter()` (`iter_mut`) | `&mut String` | 0 | **Yes** (elements mutated) |
+| `for w in words` | `words.into_iter()` | `String` (owned!) | 0 (moves into `counts`!) | **No** (consumed!) |
+
+### Deep-Dive Explanation: Four Performance & Idiom Habits for Rust Collections (Read Slowly)
+
+1. **Default to `&v` in `for` loops unless you intentionally want to consume `v`:** Forgetting `&` in `for x in v` is one of the most common causes of unexpected `E0382` move errors for beginners.
+2. **Use `entry()` for frequency counters and caches:** Writing `*counts.entry(k).or_insert(0) += 1;` performs a single hash lookup and cleanly avoids holding a simultaneous `&` and `&mut` borrow on the map.
+3. **Prefer `BTreeMap` whenever deterministic sorted output matters:** `HashMap` randomizes its hash seed per process run—never rely on `HashMap` iteration order in unit tests or serialized output!
+4. **Trust iterator chains over manual index loops:** `v.iter().filter(|x| **x > 0).sum()` eliminates manual bounds checks (`v[i]`) and lets LLVM auto-vectorize cleanly.
+
+**Quick check.** In the trace above, why did moving `words` with `for w in words` let us insert each `String` into `counts` with **zero `.clone()` calls**, whereas looping with `for w in &words` would have forced `w.clone()`?
+
+---
 
 ## Exercises
 

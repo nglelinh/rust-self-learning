@@ -10,7 +10,21 @@ categories:
 lesson_type: required
 ---
 
-Bài học này tập trung vào những cú pháp Rust xuất hiện thường xuyên nhất: gắn biến (binding), tính khả biến, nhập/xuất cơ bản và luồng điều khiển đơn giản. Mục tiêu không phải là học thuộc lòng cú pháp, mà là hình thành thói quen lập trình tin cậy: viết chương trình nhỏ gọn, đảm bảo tính đúng đắn và xử lý lỗi một cách tường minh.
+Ở hầu hết các ngôn ngữ như C, Python hay JavaScript, mọi biến sinh ra đều mặc định *thay đổi được* (mutable) — và hàng nghìn lỗi phần mềm khó lần vết nhất xuất phát từ việc một biến bị âm thầm ghi đè ở đâu đó cách xa hàng trăm dòng mã. Rust lật ngược hoàn toàn mặc định đó: **mọi gắn biến (`let`) đều bất biến (immutable)** trừ khi bạn viết tường minh từ khóa `mut` như một bản cam kết với người đọc mã rằng *"giá trị này sẽ biến đổi"*.
+
+Bài học này dẫn bạn qua chương trình Rust đầu tiên, phân biệt rạch ròi ba khái niệm nền tảng thường bị nhầm lẫn — **bất biến (`let`)**, **khả biến tại chỗ (`let mut`)** và **che bóng (`shadowing`)** — đồng thời làm chủ hệ thống định dạng đầu ra qua `Display` (`{}`) và `Debug` (`{:?}`).
+
+---
+
+## Bản đồ kiến thức nền: Bất biến mặc định, Shadowing và Hệ thống định dạng trong Rust
+
+Dưới lớp cú pháp đơn giản của bài học đầu tiên là ba nguyên lý thiết kế ngôn ngữ rất sâu sắc:
+
+1. **Bất biến mặc định (Immutability by Default):** Biến bất biến không chỉ giúp con người đọc mã dễ đoán hơn, mà còn giúp trình biên dịch tối ưu hóa thanh ghi (register) và chuẩn bị nền tảng cho mô hình chia sẻ an toàn đa luồng sau này.
+2. **Đột biến tại chỗ (`mut`) vs. Tạo binding mới (`shadowing`):** Khi dùng `let mut x = 1; x = 2;`, ta ghi đè vào *cùng một ô nhớ* trên Stack và kiểu dữ liệu bắt buộc phải giữ nguyên. Ngược lại, **shadowing** (`let x = "42"; let x: i32 = x.parse()?;`) tạo ra một **biến hoàn toàn mới** che khuất tên cũ, cho phép đổi sang kiểu dữ liệu mới mà vẫn giữ nguyên tính bất biến!
+3. **Trait định dạng (`Display` vs. `Debug`) và Macro (`println!`):** Dấu chấm than `!` ở `println!` báo hiệu đây là một **macro** được mở rộng và kiểm tra khớp kiểu chuỗi định dạng ngay tại thời điểm biên dịch (compile-time), không bị lỗi tràn bộ đệm hay sai định dạng lúc chạy như `printf` trong C.
+
+---
 
 ## Kế hoạch giảng dạy 60 phút
 
@@ -217,6 +231,42 @@ Chuỗi đọc từ `read_line` luôn chứa ký tự xuống dòng (`\n` hoặc
 ### 3. Lạm dụng `unwrap()`
 
 Nguyên tắc trong khóa học này: đối với ứng dụng dòng lệnh (CLI), chỉ dùng `unwrap()` khi thực sự bất khả kháng; hãy ưu tiên xử lý lỗi tường minh bằng `match` hoặc toán tử `?`.
+
+---
+
+### Ví dụ truy vết từng dòng (Stack / Kiểu dữ liệu): So sánh `mut` và `shadowing` trên Stack
+
+Hãy truy vết từng dòng đoạn mã nhỏ sau để thấy sự khác biệt vật lý trên Stack giữa ghi đè (`mut`) và che bóng (`shadowing`):
+
+```rust
+fn main() {
+    let mut count: i32 = 10;   // Ô nhớ Stack #1 (4 byte): count = 10
+    count += 5;                // Ghi đè TRỰC TIẾP vào Ô #1: count = 15 (kiểu vẫn là i32)
+
+    let raw = "  42  ";        // Ô nhớ Stack #2 (&str, 16 byte): ptr + len=6
+    let raw = raw.trim();      // Ô nhớ Stack #3 (&str, 16 byte): ptr' + len=2 (SHADOWING!)
+    let raw: i32 = raw.parse().unwrap(); // Ô nhớ Stack #4 (i32, 4 byte): 42 (ĐỔI KIỂU!)
+    println!("count={count}, raw={raw}");
+}
+```
+
+| Bước | Tên biến đang nhìn thấy | Kiểu dữ liệu | Hành động trên bộ nhớ Stack |
+| :--- | :--- | :--- | :--- |
+| Dòng 2–3 | `count` (`mut`) | `i32` (cố định) | Ghi đè tại chỗ vào cùng ô nhớ 4 byte (`10` $$	o$$ `15`) |
+| Dòng 5 | `raw` (lần 1) | `&str` | Cấp phát binding mới trỏ chuỗi `"  42  "` |
+| Dòng 6 | `raw` (lần 2) | `&str` | Tạo binding mới bất biến trỏ lát cắt `"42"` |
+| Dòng 7 | `raw` (lần 3) | `i32` | Tạo binding mới 4 byte chứa số `42`; tên cũ bị che khuất |
+
+### Khung giải thích: Bốn quy tắc vàng khi làm việc với biến và in ấn trong Rust (nên đọc chậm)
+
+1. **Mặc định dùng `let`, chỉ thêm `mut` khi thực sự cần biến đổi:** Nếu bạn lỡ viết `let mut x = 5;` mà không bao giờ sửa `x`, trình biên dịch `rustc` sẽ nhắc nhẹ bằng cảnh báo *unused `mut`* để giữ mã luôn sạch.
+2. **Dùng shadowing cho chuỗi biến đổi kiểu dữ liệu:** Thay vì đặt tên rườm rà kiểu `input_str`, `input_trimmed`, `input_num`, shadowing cho phép giữ một tên duy nhất và khóa tính bất biến sau khi chuyển đổi xong.
+3. **Phân biệt `{}` (`Display`) và `{:?}` (`Debug`):** `{}` dành cho người dùng cuối (chuỗi, số), còn `{:?}` (và `{:#?}` in đẹp nhiều dòng) dành cho lập trình viên soi cấu trúc bên trong của `Vec`, `tuple` hay `struct` (với `#[derive(Debug)]`).
+4. **Nhớ macro `dbg!` khi gỡ lỗi nhanh:** `dbg!(&x)` vừa in tên tệp, số dòng, biểu thức lẫn giá trị ra `stderr`, vừa trả về quyền sở hữu biểu thức để bạn chèn trực tiếp vào giữa công thức tính toán.
+
+**Kiểm tra nhanh.** Nếu bạn viết `let mut s = "42"; s = s.parse::<i32>().unwrap();` (không có từ khóa `let` ở lệnh thứ hai), trình biên dịch sẽ chấp nhận hay báo lỗi — và vì sao?
+
+---
 
 ## Bài tập
 

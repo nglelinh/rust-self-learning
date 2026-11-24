@@ -10,7 +10,22 @@ categories:
 lesson_type: required
 ---
 
-Rust encourages you to express decisions with `match` and patterns so that impossible states are unrepresentable. This lesson builds the habit of using expressions (`if`, `match`) and enums to make logic explicit.
+In C or Java, forgetting a `default` branch or a `break` statement inside a `switch` compiles without complaint—and quietly lurks in production until a new enum variant is added six months later. Rust turns control flow into a **compile-time completeness proof**: `if` and `match` are *expressions* that evaluate to values, and every `match` is **exhaustively checked** by the compiler. Miss a single possible case, and your code refuses to compile.
+
+This lecture teaches Rust’s expression-oriented style: replacing mutable scratch variables with `if` and `match` expressions, mastering ranges, guards, and destructuring patterns, and choosing cleanly between `match`, `if let`, and `while let`.
+
+---
+
+## Background Knowledge Map: Expression-Oriented Control Flow & Exhaustive Matching
+
+Four design principles elevate Rust’s control flow far beyond traditional `if`/`switch` statements:
+
+1. **Expressions Over Statements:** Blocks `{ ... }`, `if/else`, `match`, and even `loop` evaluate to values. You can initialize immutable bindings directly (`let label = if ok { "ok" } else { "err" };`) without ever declaring an uninitialized `mut` variable.
+2. **Exhaustiveness Checking:** `rustc` statically verifies that the arms of a `match` cover 100% of the input type’s domain. When you later add a new variant to an `enum`, the compiler immediately highlights every `match` across the codebase that needs updating.
+3. **Destructuring + Pattern Guards:** Patterns simultaneously inspect the *shape* of tuples, structs, enums, and ranges (`1..=5`) and bind inner fields to local variables in one atomic step, optionally refined by boolean `if` guards.
+4. **Focused Sugar (`if let` and `while let`):** When you genuinely care about only one variant (e.g., `Some(x)` or `Ok(v)`), `if let` and `while let` remove boilerplate without sacrificing type safety.
+
+---
 
 ## 60-minute teaching plan
 
@@ -279,6 +294,43 @@ Instructor note: `use std::io::{self, Read};` is not needed for `read_line`; you
 1. Using `_` too early: you lose exhaustiveness benefits. Prefer explicit cases.
 2. Panicking on bad input: keep parse errors recoverable in a REPL.
 3. Mixing parsing and execution: keep them separate so they are testable.
+
+---
+
+### Worked Line-by-Line Trace (Expression Evaluation & the Semicolon Rule): Tracing `match` Arms & Guards
+
+Trace three inputs step by step through this expression-oriented function:
+
+```rust
+fn classify(pair: (i32, Option<i32>)) -> &'static str {
+    match pair {
+        (x, Some(y)) if x + y == 10 => "sums to 10", // Arm 1: destructure + guard
+        (0, Some(_))                => "x is zero",  // Arm 2: reached only if Arm 1 fails
+        (x, None) if x < 0          => "neg & none", // Arm 3: negative x with None
+        _                           => "other",      // Arm 4: exhaustive fallback
+    } // NO trailing semicolon -> the entire `match` is the return expression!
+}
+```
+
+| Input `pair` | Arm 1 `(x, Some(y)) if x+y==10` | Arm 2 `(0, Some(_))` | Arm 3 `(x, None) if x<0` | Returned Value |
+| :--- | :--- | :--- | :--- | :--- |
+| `(0, Some(10))` | Binds `x=0, y=10`; guard `0+10==10` is **True** | (skipped) | (skipped) | `"sums to 10"` |
+| `(0, Some(3))` | Binds `x=0, y=3`; guard `0+3==10` is **False** | Matches `0` & `Some(3)` -> **True** | (skipped) | `"x is zero"` |
+| `(-4, None)` | Pattern mismatch (`None` $$
+eq$$ `Some`) | Pattern mismatch | Binds `x=-4 < 0` -> **True** | `"neg & none"` |
+
+*Watch the semicolon:* Adding a `;` right after the closing `}` of `match` turns the expression into a **statement** returning the unit type `()`—which immediately triggers a compile-time return-type mismatch against `&'static str`.
+
+### Deep-Dive Explanation: Four Habits for Clean Rust Control Flow (Read Slowly)
+
+1. **Use expression assignment to eliminate `mut` boilerplate:** Prefer `let msg = match code { ... };` over declaring `let mut msg = "";` and mutating it inside branches.
+2. **Avoid blind `_ =>` wildcards on your own enums:** Listing every variant explicitly harnesses the compiler as a refactoring safety net whenever new variants appear.
+3. **Order guarded arms from most specific to most general:** When a pattern matches structurally but its `if` guard evaluates to `false`, Rust falls through to test subsequent arms in top-to-bottom order.
+4. **Use `loop { ... break value; }` for retry loops:** Because `loop` is guaranteed to run until a `break`, `rustc` knows its return value is always initialized when breaking with a payload.
+
+**Quick check.** In `classify` above, what happens at compile time and at runtime if someone accidentally moves the wildcard arm `_ => "other"` to the very top of the `match`?
+
+---
 
 ## Exercises
 

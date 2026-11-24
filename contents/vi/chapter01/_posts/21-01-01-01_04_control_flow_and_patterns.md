@@ -10,7 +10,22 @@ categories:
 lesson_type: required
 ---
 
-Rust khuyến khích diễn đạt logic rẽ nhánh bằng `match` và pattern matching để các trạng thái bất hợp lệ không thể tồn tại trong chương trình. Bài học này xây dựng thói quen sử dụng `if`, `match` như các biểu thức trả về giá trị, kết hợp với `enum` để luồng xử lý trở nên tường minh.
+Trong C hay Java, một câu lệnh `switch` quên viết nhánh `default` (hoặc quên từ khóa `break`) có thể âm thầm trôi qua kiểm thử và gây ra sự cố nghiêm trọng khi một trạng thái mới được thêm vào hệ thống nhiều tháng sau đó. Rust biến luồng điều khiển thành một **công cụ kiểm chứng tính đầy đủ tại thời điểm biên dịch**: `if` là một *biểu thức* trả về giá trị, còn `match` bắt buộc phải **bao quát mọi khả năng (exhaustiveness)** — nếu bạn bỏ sót dù chỉ một trường hợp, chương trình sẽ từ chối biên dịch!
+
+Bài học này giúp bạn tư duy theo phong cách biểu thức (expression-oriented) của Rust: viết `if` gọn gàng không cần biến tạm `mut`, làm chủ sức mạnh của `match` (khoảng giá trị, điều kiện canh `if` guard, phân rã tuple), xử lý an toàn `Option`/`Result`, và chọn đúng giữa `match`, `if let` và `while let`.
+
+---
+
+## Bản đồ kiến thức nền: Tư duy biểu thức và Đối khớp mẫu toàn diện trong Rust
+
+Bốn nguyên lý sau phân biệt luồng điều khiển trong Rust với các ngôn ngữ mệnh lệnh truyền thống:
+
+1. **Mọi thứ đều là Biểu thức (Expression-Oriented):** Trong Rust, khối `{ ... }`, `if/else`, `match`, thậm chí cả `loop` đều có thể trả về một giá trị. Nhờ đó bạn có thể khởi tạo trực tiếp biến bất biến `let status = if ok { "OK" } else { "ERR" };` mà không cần khai báo biến rỗng `mut` trước.
+2. **Tính bao quát tuyệt đối (Exhaustiveness Checking):** Trình biên dịch phân tích toàn bộ không gian giá trị của biểu thức trong `match`. Nếu bạn thêm một biến thể mới vào `enum`, trình biên dịch sẽ lập tức gạch đỏ *mọi* câu lệnh `match` trong toàn dự án chưa xử lý biến thể đó!
+3. **Phân rã cấu trúc (Destructuring) & Ràng buộc mẫu:** Pattern matching không chỉ so sánh bằng — nó vừa kiểm tra hình dạng dữ liệu (tuple, struct, enum, khoảng `1..=5`), vừa **bóc tách** các thành phần bên trong ra thành biến cục bộ trong đúng một bước.
+4. **Vòng lặp an toàn & Đường gọn (`if let` / `while let`):** Khi bạn chỉ quan tâm đúng 1 nhánh của `Option`/`Result` và muốn bỏ qua phần còn lại, `if let` và `while let` giữ mã ngắn gọn mà vẫn đảm bảo an toàn kiểu.
+
+---
 
 ## Kế hoạch giảng dạy 60 phút
 
@@ -279,6 +294,45 @@ Lưu ý: phần `Read` trong `use std::io::{self, Read};` không cần thiết c
 1. Dùng nhánh đại diện `_` quá sớm: làm mất lợi ích kiểm tra tính đầy đủ của trình biên dịch khi thêm biến thể mới vào `enum`. Nên liệt kê tường minh các nhánh khi có thể.
 2. Để chương trình panic khi đầu vào sai: trong vòng lặp REPL, lỗi phân tích cú pháp cần được xử lý để chương trình tiếp tục chạy.
 3. Gộp chung phần phân tích cú pháp và phần thực thi: cần tách riêng hai bước này để dễ viết kiểm thử đơn vị.
+
+---
+
+### Ví dụ truy vết từng dòng (Đánh giá biểu thức & Bẫy dấu chấm phẩy `;`): Vì sao một dấu `;` đổi cả kiểu dữ liệu?
+
+Hãy truy vết từng dòng đoạn mã sử dụng biểu thức `if`, `match` có guard và phân rã tuple:
+
+```rust
+fn classify(pair: (i32, Option<i32>)) -> &'static str {
+    match pair {
+        (x, Some(y)) if x + y == 10 => "tổng bằng 10", // Nhánh 1: khớp mẫu + guard đúng
+        (0, Some(_))                => "x bằng 0",     // Nhánh 2: không chạy nếu Nhánh 1 đã khớp
+        (x, None) if x < 0          => "âm và thiếu y",// Nhánh 3: phân rã x và kiểm tra None
+        _                           => "trường hợp khác", // Nhánh 4: bao quát toàn bộ phần còn lại
+    } // KHÔNG có dấu `;` -> toàn bộ `match` trả về `&'static str`!
+}
+```
+
+Truy vết 3 đầu vào cụ thể đi qua các nhánh theo đúng thứ tự từ trên xuống dưới:
+
+| Đầu vào `pair` | Nhánh 1 `(x, Some(y)) if x+y==10` | Nhánh 2 `(0, Some(_))` | Nhánh 3 `(x, None) if x<0` | Kết quả trả về |
+| :--- | :--- | :--- | :--- | :--- |
+| `(0, Some(10))` | Khớp `x=0, y=10`, guard `0+10==10` **Đúng** | (không xét nữa) | (không xét nữa) | `"tổng bằng 10"` |
+| `(0, Some(3))` | Khớp mẫu nhưng guard `0+3==10` **Sai** | Khớp `0` và `Some(3)` **Đúng** | (không xét nữa) | `"x bằng 0"` |
+| `(-4, None)` | Sai (vì `None` $$
+eq$$ `Some`) | Sai | Khớp `x=-4 < 0` **Đúng** | `"âm và thiếu y"` |
+
+*Lưu ý sống còn về dấu chấm phẩy:* Nếu ở dòng cuối của hàm bạn vô tình thêm `;` sau dấu `}` của `match`, biểu thức `match` biến thành **câu lệnh (statement)** có kiểu unit `()` — lập tức gây lỗi biên dịch vì không khớp kiểu trả về `&'static str`!
+
+### Khung giải thích: Bốn thói quen viết luồng điều khiển sạch chuẩn Rust (nên đọc chậm)
+
+1. **Dùng biểu thức để giảm biến `mut`:** Thay vì khai báo `let mut label = ""; if ... { label = ... }`, hãy gán thẳng `let label = match ... { ... };`. Mã ngắn hơn và đảm bảo biến không bao giờ bị quên khởi tạo.
+2. **Cẩn thận khi dùng nhánh bắt tất cả `_ =>`:** Với `enum` do chính bạn định nghĩa, hạn chế dùng `_ =>` nếu có thể — liệt kê tường minh từng biến thể giúp trình biên dịch tự động nhắc bạn mỗi khi hệ thống mở rộng thêm trạng thái mới.
+3. **Kiểm soát thứ tự nhánh có guard:** Khi một nhánh có `if` guard bị sai, Rust sẽ tự động trượt xuống kiểm tra nhánh tiếp theo — đặt các nhánh cụ thể hơn ở phía trên nhánh tổng quát.
+4. **Dùng `loop` trả về giá trị cho vòng lặp thử lại (retry):** `let val = loop { if let Ok(v) = try_op() { break v; } };` là mẫu thiết kế cực kỳ thanh lịch chỉ có ở ngôn ngữ hướng biểu thức.
+
+**Kiểm tra nhanh.** Trong hàm `classify` ở trên, nếu bạn đưa vào cặp `(5, Some(5))` và trước đó vô tình đảo vị trí nhánh `_ => "trường hợp khác"` lên đầu tiên của `match`, chuyện gì sẽ xảy ra lúc biên dịch và lúc chạy?
+
+---
 
 ## Bài tập
 

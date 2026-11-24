@@ -10,7 +10,25 @@ categories:
 lesson_type: required
 ---
 
-A process is the OS's fundamental unit of isolation: its own address space, file descriptor table, and scheduling context. This lesson covers how to spawn and supervise child processes from Rust, how signals interrupt execution, and how to handle both correctly.
+Every time you hit Enter in a terminal, launch a compiler, or run a web server behind systemd, the operating system performs a carefully choreographed dance: cloning or spawning an isolated execution environment, wiring up its standard input/output streams, monitoring its health, and eventually reaping its exit status so it does not linger as a zombie.
+
+In Chapter 8, we step below application frameworks directly into the **Unix systems programming** layer. This lesson unpacks how processes are created, how asynchronous **signals** (`SIGTERM`, `SIGKILL`, `SIGINT`) interrupt running programs, and how Rust's `std::process::Command` turns fragile C `fork`/`exec` boilerplate into clean, leak-free supervision code.
+
+## Background Knowledge Map: How Does the Kernel Manage Process Lifecycles?
+
+To build reliable CLIs, build tools, shells, and daemons in Rust, you need four foundational Unix process concepts:
+
+1. **Process Identity & Address-Space Isolation (`PID`, `PPID`, Process Groups)**:
+   Every running program is tracked by the kernel via a **Process Control Block** (PCB) identified by a unique Process ID (`PID`) and Parent PID (`PPID`). Each process has its own virtual address space, file descriptor table, working directory, and environment variables.
+
+2. **The `fork` + `exec` + `waitpid` Lifecycle (and Zombie Prevention)**:
+   On POSIX systems, spawning a new program traditionally duplicates the parent (`fork` using Copy-on-Write page tables) and immediately replaces the child's memory image with the new binary (`execve`). When the child terminates, the kernel frees its memory **except** its small PCB entry holding the exit status—making it a **zombie (`Z`)** until the parent calls `waitpid()` (in Rust: `child.wait()`) to reap it.
+
+3. **Signals: Asynchronous Software Interrupts**:
+   Signals are 1-integer notifications delivered by the kernel or another process (`kill(pid, sig)`). Some can be caught for graceful shutdown (`SIGINT` = Ctrl+C, `SIGTERM` = polite stop), while two **cannot be caught, blocked, or ignored** (`SIGKILL` = immediate termination, `SIGSTOP` = freeze). Because signal handlers can interrupt a thread mid-instruction (even while holding a `malloc` lock!), POSIX restricts raw handlers to **async-signal-safe** operations—which is why Rust programs use crates like `signal-hook` or `tokio::signal` to convert signals into safe flags or channel messages.
+
+4. **Exit Status Encoding (`waitpid` 16-bit Bitfield)**:
+   A child process can end in two completely different ways: exiting voluntarily (`exit(code)`) or being killed by a signal (`SIGSEGV`, `SIGKILL`). Unix packs both outcomes into a single integer status word decoded by `ExitStatus::code()` and `ExitStatusExt::signal()`.
 
 ## 60-minute teaching plan
 
@@ -221,6 +239,45 @@ fn run_with_retry(cmd: &str, args: &[&str], retries: u32) -> ExitStatus {
 ```
 
 On Unix, use `ExitStatus::code()` (returns `Option<i32>` — `None` if killed by signal) and `std::os::unix::process::ExitStatusExt::signal()` to distinguish normal exit from signal termination.
+
+### Deep-Dive Explanation: Hand-Decoding Unix `waitpid` Exit Statuses and Tracing a Zombie Process (Read Slowly)
+
+When a child process finishes on Linux/macOS, `waitpid()` returns a single raw 32-bit integer `wstatus` (whose low 16 bits carry the full termination report). Let us decode two concrete values bit by bit by hand so you understand exactly what Rust's `ExitStatus` is inspecting under the hood.
+
+#### The POSIX/Linux 16-Bit `wstatus` Layout
+
+```text
+Bit:   15 14 13 12 11 10  9  8 |  7   |  6  5  4  3  2  1  0
+      [     Exit Code (8 bits) | Core |  Terminating Signal  ]
+      └────── bits 8..15 ──────┘ bit7 └───── bits 0..6 ──────┘
+```
+
+- **Rule A (Normal exit)**: If bits `0..6` (`wstatus & 0x7F`) equal `0`, the process exited normally (`WIFEXITED == true`), and its exit code is `(wstatus >> 8) & 0xFF`.
+- **Rule B (Killed by signal)**: If bits `0..6` are non-zero (and not `0x7F` for stopped), the process was killed by signal number `wstatus & 0x7F` (`WIFSIGNALED == true`), and bit `7` (`wstatus & 0x80`) is `1` if a core dump was produced.
+
+#### Worked Example 1: Child Calls `std::process::exit(2)`
+
+Suppose the kernel returns `wstatus = 0x0200` (decimal `512`):
+1. Check low 7 bits: `0x0200 & 0x007F = 0x00` → **Normal exit** (`WIFEXITED = true`).
+2. Shift right by 8 bits: `(0x0200 >> 8) & 0xFF = 0x02` → **Exit code = `2`**.
+3. In Rust: `status.code()` returns `Some(2)`, `status.signal()` returns `None`, and `status.success()` returns `false`.
+
+#### Worked Example 2: Child Is Killed by `SIGKILL` (Signal 9)
+
+Suppose the kernel returns `wstatus = 0x0009` (decimal `9`):
+1. Check low 7 bits: `0x0009 & 0x007F = 9` ($\neq 0$) → **Terminated by signal** (`WIFSIGNALED = true`).
+2. Check bit 7 (core dump): `0x0009 & 0x0080 = 0` → No core dump.
+3. In Rust: `status.code()` returns **`None`** (not `Some(9)`!), `status.signal()` returns **`Some(9)`**, and a shell reports `$? = 128 + 9 = 137` (the famous "exit code 137" you see in Docker/Kubernetes when the OOM killer sends `SIGKILL`!).
+
+#### Tracing a Process Table From `spawn()` to Reaping
+
+| Time | Parent (`PID 4100`) Action | Kernel Process Table Entry for Child (`PID 4101`) |
+| :---: | :--- | :--- |
+| $t_0$ | `let mut c = Command::new("sleep").arg("1").spawn()?;` | `PID 4101`, `PPID 4100`, state = **`R`/`S` (Running/Sleeping)** |
+| $t_1$ | Child finishes after 1 s; parent has **not** called `c.wait()` yet | `PID 4101`, state = **`Z` (Zombie)** — RAM freed, PCB holds `wstatus = 0x0000` |
+| $t_2$ | Parent calls `let st = c.wait()?;` (`waitpid(4101)`) | Entry `PID 4101` is **reaped & deleted**; parent receives `Ok(ExitStatus(0))` |
+
+If a long-running Rust daemon spawns thousands of short-lived children and forgets to call `.wait()` (or `.status()` / `.output()`), those zombie PCBs pile up until the OS exhausts its PID limit!
 
 ## In-class exercises
 

@@ -10,7 +10,28 @@ categories:
 lesson_type: required
 ---
 
-Message passing is often a simpler way to build concurrency than shared mutable state. This lesson uses channels to coordinate work, designs explicit shutdown protocols, and builds a worker pool — a pattern you will use in real CLI tools, servers, and pipeline processors.
+“*Do not communicate by sharing memory; instead, share memory by communicating.*” That famous systems motto shines even brighter in Rust than in Go—because when you send a `String` or `Vec<u8>` down a Rust channel (`tx.send(job)`), **ownership moves** across the channel! The sending thread literally loses compile-time access to `job` the instant it sends it, making post-send mutation bugs impossible without copying a single byte of heap payload.
+
+This lesson shifts from locks (`Arc<Mutex<T>>`) to **message-passing concurrency**: `mpsc` channels, bounded vs. unbounded backpressure, explicit protocol enums, clean **graceful shutdown** when senders drop, and building a real multi-threaded **worker pool** you can reuse in CLIs and servers.
+
+---
+
+## Background Knowledge Map: Message Passing, Backpressure & Protocols
+
+### 1. Ownership Transfer Over Channels (`mpsc` / Bounded Queues)
+A channel pairs a **Sender (`tx`)** and **Receiver (`rx`)** around a synchronized FIFO queue. Sending a value `T: Send` transfers ownership—so a 10 MB `Vec<u8>` moves across threads by copying only its **24-byte stack header**, never its heap bytes!
+- **Core questions:** How does ownership transfer eliminate both data races and deep copies simultaneously?
+- **Real-world reach:** Logging pipelines, actor systems, audio DSP threads, and worker pools.
+
+### 2. Bounded Channels & Backpressure
+An **unbounded** channel (`mpsc::channel()`) lets a fast producer push millions of messages while a slow consumer falls behind—silently growing RAM until the OS kills your process (OOM!). A **bounded** channel (`mpsc::sync_channel(cap)`) blocks the producer once `cap` slots are full, applying natural **backpressure** that keeps memory strictly bounded.
+- **Core questions:** Why should production pipelines almost always default to bounded channels?
+- **Real-world reach:** Network proxy buffers, streaming ETL pipelines, and rate-limited job queues.
+
+### 3. Protocol Modeling & Graceful Shutdown Semantics
+In Rust, channel lifecycles are tied directly to `Drop`: when **all** `Sender` clones are dropped, `rx.recv()` returns `Err(RecvError)` (and `for msg in rx` exits cleanly!). Forgetting to drop the *original* `tx` after cloning it to workers is the #1 reason worker pools hang forever on shutdown.
+- **Core questions:** How do you shut down a multi-worker pool without dropping in-flight jobs or hanging `join()`?
+- **Real-world reach:** Graceful SIGTERM handling in web servers and batch CLI processors.
 
 ## 60-minute teaching plan
 
@@ -355,6 +376,44 @@ Backpressure (bounded channel) prevents memory exhaustion if disk is slow.
 5. Not joining threads (they might be killed before finishing).
 
 ---
+
+---
+
+## Worked Examples & Deep Dive
+
+### Worked Example 1: Tracing Why a Channel Loop Hangs When You Forget `drop(tx)`
+
+Suppose you spawn 2 producer threads that clone `tx`, while `main` consumes from `rx`:
+
+| Step | Active `Sender` Clones | `rx.recv()` Behavior |
+|---|---|---|
+| 1. `let (tx, rx) = mpsc::channel();` | 1 (`tx` in `main`) | Waiting |
+| 2. Spawn Producer 1 with `tx.clone()`, Producer 2 with `tx.clone()` | **3** (`tx`, `tx1`, `tx2`) | Receives jobs cleanly |
+| 3. Producer 1 & Producer 2 finish and exit (`tx1, tx2` dropped) | **1** (`tx` still alive in `main`!) | **BLOCKS FOREVER!** `rx` thinks `main` might still send! |
+| 4. **Fix:** Add `drop(tx);` in `main` right after spawning producers! | **0** once producers finish | `for msg in rx` **exits cleanly ✓** |
+
+### Worked Example 2: Bounded Channel Backpressure Trace (`sync_channel(2)`)
+
+Trace a fast producer (10 ms/job) feeding a slow consumer (100 ms/job) through `mpsc::sync_channel(2)`:
+- `t = 0 ms`: Producer sends Job 1 → buffer `[J1]` (len 1/2) — returns immediately.
+- `t = 10 ms`: Producer sends Job 2 → buffer `[J1, J2]` (len 2/2, **FULL**).
+- `t = 20 ms`: Producer calls `tx.send(J3)` → **BLOCKS** (zero extra RAM allocated!).
+- `t = 100 ms`: Consumer pops `J1` → buffer `[J2]` (len 1/2) → Producer wakes up and pushes `J3`!
+Memory stays capped at **2 jobs** forever instead of growing to gigabytes!
+
+### Deep-Dive Explanation: Designing Clean Message-Passing Architectures (Read Slowly)
+
+#### Step 1: Model messages as a crisp `enum`, not raw strings or tuples
+Instead of sending `(u32, String)` and remembering magic codes, define `enum Command { Process(Job), Flush(oneshot::Sender<()>), Shutdown }`. Rust’s exhaustive `match` guarantees workers handle every protocol state.
+
+#### Step 2: Default to bounded channels to prevent silent OOM crashes
+Pick a sensible queue capacity (e.g., `2 * num_workers` or `1024`) so memory stays predictable under traffic spikes. Use unbounded channels only when the total number of messages is strictly small and known in advance.
+
+#### Step 3: Draw the shutdown ownership graph on paper
+Every `Sender` clone keeps the channel open. Drop the original `tx` as soon as clones are handed out, join all producer threads, let `rx` drain naturally, and then join all worker threads—guaranteeing zero lost jobs and zero hangs.
+
+#### Step 4: Know when `Arc<Mutex<T>>` is still simpler than channels
+Channels excel at **pipelines, queues, and actors** where work flows in one direction. If ten threads simply need random-access lookups into a shared cache, `Arc<RwLock<HashMap<...>>>` (or `DashMap`) is simpler and faster than routing every read through a central actor channel.
 
 ## Exercises
 

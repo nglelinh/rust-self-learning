@@ -10,7 +10,25 @@ categories:
 lesson_type: optional
 ---
 
-This optional lesson does not reteach GPUI’s `View`/`Model` split, flex layout, or the desktop event loop. It surveys the *products* that made Rust-on-the-desktop a 2022–2026 story: Zed (open-sourced January 2024, GPUI 2 in production that same month), Tauri 2.0 (2 October 2024), and System76’s COSMIC desktop on iced.
+For years, skeptics argued that Rust was great for CLIs, databases, and WebAssembly, but "not ready for real desktop UI." Between 2022 and 2026, a wave of flagship products dismantled that argument in public: **Zed** (editing 100,000-line files at 120 FPS on GPUI), **Rerun** (streaming millions of 3D robotics points per second in `egui`), **Warp** and **WezTerm** (GPU-accelerated terminals), **Cosmic Desktop** (System76's entire Linux desktop environment written in `iced`), and **Tauri** (shrinking web-UI desktop binaries from 150 MB down to under 5 MB).
+
+This lesson looks past framework tutorials to examine the *engineering architectures* that let these production Rust desktop products ship across macOS, Linux, and Windows.
+
+## Background Knowledge Map: What Systems Innovations Power Production Rust Desktop Apps?
+
+Modern Rust desktop products outperform legacy stacks because they rethink four classic bottlenecks:
+
+1. **Glyph Atlases & Subpixel Text Rendering on the GPU**:
+   Drawing text letter-by-letter with CPU calls is too slow for code editors and terminals. Production engines rasterize each unique `(font, glyph_id, size, subpixel_offset)` *once* into a shared GPU texture called a **glyph atlas** (packed via a 2D rectangle shelf/guillotine packer). Rendering 10,000 characters on screen then becomes a single instanced GPU draw call reading UV coordinates from that atlas.
+
+2. **Hybrid Architecture (WebView Shell + Rust Core vs. Pure GPU Native)**:
+   Not every product needs a custom GPU engine. **Tauri** reuses the OS's already-installed WebView (`WKWebView` on macOS, `WebView2` on Windows, `WebKitGTK` on Linux) for UI chrome while running heavy indexing, SQLite, and cryptography in native Rust over a typed IPC bridge. Pure-Rust GPU apps (`GPUI`, `iced`, `egui`, `Slint`) eliminate the browser engine entirely when frame-time predictability and memory efficiency are core product features.
+
+3. **Data-Oriented Visualization & Zero-Copy GPU Buffers**:
+   Tools like **Rerun** and **Bevy-based CAD viewers** bypass widget trees for their main canvas, uploading contiguous Rust slices (`&[Vertex]`, `#[repr(C)]` via `bytemuck`) directly into GPU vertex/storage buffers (`wgpu`) with zero serialization or garbage-collection pauses.
+
+4. **OS Integration Layer (Accessibility, IME, HiDPI, Packaging)**:
+   A desktop product is only "done" when it respects the host OS: **AccessKit** exposes native screen-reader accessibility trees across Windows/macOS/Linux; Input Method Editors (IME) allow Vietnamese, Japanese, and Chinese composition; and automated signing/notarization pipelines package `.dmg`, `.msi`, and `.AppImage`/Flatpak bundles.
 
 ## 60-minute teaching plan
 
@@ -61,6 +79,48 @@ COSMIC: compositor + applets as Rust processes, iced widgets, Unix desktop conve
 ### Who pays the binary?
 
 Tauri’s marketing (and a lot of 2024 blog posts) is installer size. Zed’s marketing is frame time. COSMIC’s marketing is a Linux desktop that is not a C++ museum. All three are honest if you pick the matching product.
+
+### Deep-Dive Explanation: Sizing a GPU Glyph Atlas and Instanced Draw Buffer for a 10,000-Character Screen (Read Slowly)
+
+Why can a GPU-accelerated Rust editor or terminal (like Zed or Alacritty) redraw an entire 4K screen full of syntax-highlighted code in under $1\text{ ms}$? Let us compute the exact GPU memory footprint and PCIe/memory bandwidth by hand.
+
+Suppose a developer opens a 4K monitor showing **100 lines $\times$ 100 columns = $10{,}000$ visible characters** of Rust code.
+
+#### Step 1: Computing the Glyph Atlas Texture Footprint
+
+In typical source code, even across bold/italic/regular styles, how many *distinct* glyphs actually appear on screen? Roughly $256$ unique ASCII + punctuation + box-drawing glyphs (or up to $\sim 1{,}000$ with Unicode/CJK).
+- Suppose each rasterized glyph cell at $2\times$ Retina resolution fits in a $32 \times 48\text{ px}$ tile.
+- At 4 bytes per pixel (RGBA subpixel antialiasing), one glyph occupies:
+  $$32 \times 48 \times 4 = 6{,}144\text{ bytes} \approx 6\text{ KB}.$$
+- Packing $256$ unique glyphs takes only $256 \times 6\text{ KB} = \mathbf{1.5\text{ MB}}$—easily fitting inside a single $1024 \times 1024$ RGBA GPU texture ($1024 \times 1024 \times 4 = \mathbf{4.0\text{ MB}}$), uploaded **once** and reused across thousands of frames!
+
+#### Step 2: Computing Per-Frame Instanced Quad Data (10,000 Characters)
+
+On every frame, instead of uploading pixels, the CPU uploads one compact `#[repr(C)]` `GlyphInstance` struct per visible character:
+
+```rust
+#[repr(C)]
+struct GlyphInstance {
+    screen_pos: [f32; 2],  // 8 B: (x, y) in window
+    size:       [f32; 2],  // 8 B: (w, h) in pixels
+    atlas_uv:   [f32; 4],  // 16 B: (u0, v0, u1, v1) inside glyph atlas
+    color_rgba: [u8; 4],   // 4 B: syntax highlight color
+} // Total = 36 bytes per character
+```
+
+For all $10{,}000$ characters on the 4K screen:
+$$\text{Per-frame upload} = 10{,}000 \times 36\text{ bytes} = 360{,}000\text{ bytes} \approx \mathbf{352\text{ KB}}.$$
+
+#### Step 3: Comparing Against CPU Full-Framebuffer Pixel Upload
+
+Compare transferring $352\text{ KB}$ of instanced glyph descriptors vs. rasterizing a 4K ($3840 \times 2160$) RGBA framebuffer on the CPU and uploading it every frame:
+
+| Approach | Bytes Uploaded per Frame | Draw Calls | Memory Bandwidth at 120 FPS |
+| :--- | :---: | :---: | :---: |
+| **CPU Full-Screen Raster** | $3840 \times 2160 \times 4 = \mathbf{33.18\text{ MB}}$ | 1 blit | $\mathbf{3.98\text{ GB/s}}$ (plus heavy CPU raster loop) |
+| **GPU Glyph Atlas + Instancing** | $\mathbf{0.35\text{ MB}}$ ($94\times$ smaller!) | **1 instanced call** | $\mathbf{42.2\text{ MB/s}}$ (GPU draws all 10k quads in $< 0.2\text{ ms}$) |
+
+That $94\times$ reduction in per-frame data transfer explains why GPU-native Rust apps stay cool, quiet, and locked at 120 FPS even on battery power.
 
 ## Code Walkthroughs
 

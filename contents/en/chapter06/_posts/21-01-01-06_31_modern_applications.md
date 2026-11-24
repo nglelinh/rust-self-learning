@@ -10,7 +10,25 @@ categories:
 lesson_type: optional
 ---
 
-This optional lesson does not reteach `macro_rules!`, `unsafe`, FFI, or property tests. It shows where those Chapter 6 tools *are* the product in 2022–2026: Cranelift and Wasmtime, PyO3 and `cxx`, Miri’s aliasing models, and rustc itself as a Cargo workspace you can reason about.
+Chapter 6 introduced the sharpest power tools in the Rust toolbox: declarative and procedural macros, raw pointers inside `unsafe`, Foreign Function Interface boundaries, and property-based testing. In toy exercises, those features can feel abstract—almost like escape hatches you hope never to touch.
+
+In production Rust infrastructure, those "escape hatches" *are* the product. From `serde` and `sqlx` generating zero-cost parsers at compile time, to `PyO3` accelerating Python data pipelines by $10\times$–$100\times$, to `Miri` catching subtle aliasing violations before they ever reach a CPU, this lesson shows how modern teams wield Chapter 6 primitives safely at scale.
+
+## Background Knowledge Map: Where Macros, `unsafe`, and Formal Checking Meet in Industry
+
+Modern Rust ecosystems rely on four interlocking technical pillars from Chapter 6:
+
+1. **Compile-Time Metaprogramming & Macro Hygiene**:
+   Rust macros operate on token streams (`TokenStream`) rather than raw text substitution like C's `#define`. **Declarative macros** (`macro_rules!`) enforce *hygiene*—local variables introduced inside a macro cannot accidentally shadow or collide with variables in the caller's scope. **Procedural macros** (`#[derive(...)]`, attribute macros, function-like macros) run arbitrary Rust code inside the compiler to parse syntax trees (`syn`) and emit type-checked Rust code (`quote`), powering `serde`, `tokio::main`, and compile-time SQL verification in `sqlx`.
+
+2. **Aliasing Models (`Stacked Borrows` & `Tree Borrows`)**:
+   In safe Rust, the borrow checker guarantees that `&mut T` has exclusive access (no aliases). Inside `unsafe`, you can create raw pointers (`*mut T`, `*const T`) that bypass the borrow checker—but the LLVM optimizer *still* assumes Rust's aliasing rules hold (`noalias` LLVM IR attribute). Violating those rules triggers **Undefined Behavior (UB)** even if your program appears to print the right answer today. Formal operational models like **Stacked Borrows** and **Tree Borrows** define exactly which pointer derivations remain valid at every instruction.
+
+3. **Interpreted UB Detection (`Miri`) & Property Testing**:
+   Because UB is invisible to ordinary unit tests, modern Rust teams run their test suites under **Miri**—an interpreter for Rust's Mid-level Intermediate Representation (MIR) that tracks per-byte provenance, initialization state, and borrow stacks on every memory access. Paired with `proptest` or `cargo-fuzz`, Miri turns subtle `unsafe` bugs into deterministic, reproducible failures.
+
+4. **Polyglot FFI Bridges (`PyO3`, `wasm-bindgen`, `cxx`)**:
+   Rather than writing hand-rolled `extern "C"` boilerplate, modern ecosystems generate safe FFI glue via procedural macros. `PyO3` wraps CPython's C API so Rust structs appear as native Python classes; `cxx` statically verifies shared type signatures between Rust and C++ at compile time.
 
 ## 60-minute teaching plan
 
@@ -80,6 +98,45 @@ The `unsafe` is inside PyO3. Your module is the safe facade. That is the only FF
 ### Macros are compiler surface area
 
 `serde`’s derive, `tokio::select!`, `thiserror`, and rustc’s own `fluent` diagnostics are proc macros or `macro_rules!`. They expand before type checking. A 2024–2026 production bug class is “the macro expanded to something that only fails on a rare cfg.” `trybuild` and `macrotest` are how library authors snapshot that expansion — Chapter 6 testing applied to the compiler frontend.
+
+### Deep-Dive Explanation: Hand-Tracing a Stacked Borrows Violation That Miri Catches (Read Slowly)
+
+One of the most common `unsafe` surprises for systems programmers coming from C is that **creating a reference can invalidate an earlier raw pointer—even if you never write through the reference**. Let us trace the exact borrow stack step by step as Miri executes the following 6-line snippet:
+
+```rust
+let mut x: i32 = 10;
+let p1: *mut i32 = &mut x;          // Step 1
+let r_shared: &i32 = &x;            // Step 2
+let val = *r_shared;                // Step 3
+unsafe { *p1 = 20; }                // Step 4: UB!
+```
+
+Under **Stacked Borrows**, every memory location maintains a stack of *permissions* (tags) from bottom (oldest owner) to top (most recently derived borrow). A pointer can only access memory if its tag is currently on the stack; writing through a tag pops everything above it, and creating a shared reference pushes a `SharedReadOnly` tag while popping any conflicting `Unique` mutable borrows above the parent.
+
+#### Step-by-Step Borrow Stack Trace for Location `x`
+
+| Step | Statement | Borrow Stack for `x` (bottom → top) | What happened? |
+| :---: | :--- | :--- | :--- |
+| 0 | `let mut x = 10;` | `[Unique(x)]` | Local variable `x` owns the 4-byte stack slot. |
+| 1 | `let p1 = &mut x as *mut i32;` | `[Unique(x), SharedRW(p1)]` | Deriving a raw `*mut` from `&mut x` pushes a `SharedReadWrite` tag for `p1`. |
+| 2 | `let r_shared = &x;` | `[Unique(x), SharedRO(r_shared)]` | Reborrowing directly from `x` searches down to `Unique(x)` and **pops `SharedRW(p1)` off the stack**, then pushes `SharedReadOnly(r_shared)`. |
+| 3 | `let val = *r_shared;` | `[Unique(x), SharedRO(r_shared)]` | Valid read: `SharedRO(r_shared)` is on the stack (`val = 10`). |
+| 4 | `unsafe { *p1 = 20; }` | **ERROR: tag `p1` not in stack!** | Miri halts with Undefined Behavior: `p1` was permanently invalidated at Step 2! |
+
+#### Why Does This Matter to the Compiler?
+
+When LLVM compiles Step 3 and Step 4 with optimizations enabled (`--release`), `r_shared` carries the promise that `x` cannot be mutated through any unrelated pointer while `r_shared` is active. If the optimizer hoists or caches `x` in a CPU register across Step 4, your program silently observes stale data—even though on an unoptimized debug build it "seemed to work."
+
+#### The Fix (Hand-Verifying the Valid Stack)
+
+If you derive `r_shared` *from `p1`* (or finish using `r_shared` before creating `p1` from `x`), `p1`'s tag stays alive beneath it:
+```rust
+let mut x: i32 = 10;
+let p1: *mut i32 = &mut x;                // Stack: [Unique(x), SharedRW(p1)]
+let val = unsafe { *p1 };                 // Read via p1: SharedRW(p1) is on top → OK (val = 10)
+unsafe { *p1 = 20; }                      // Write via p1: SharedRW(p1) is on top → OK (x = 20)
+```
+Running `cargo +nightly miri test` checks this exact stack discipline on every byte of your `unsafe` code automatically.
 
 ## Code Walkthroughs
 

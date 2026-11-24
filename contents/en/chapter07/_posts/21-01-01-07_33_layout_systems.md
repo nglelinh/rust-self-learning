@@ -10,7 +10,27 @@ categories:
 lesson_type: required
 ---
 
-In a browser you reach for flexbox and CSS grid almost automatically. In a Rust GUI framework those tools don't exist — layout is computed in code, not declared in a stylesheet. This lesson builds a ground-up understanding of how layout systems work: box models, constraint trees, positioning algorithms, and spacing/alignment primitives. GPUI is used for examples, but the mental model applies to every framework.
+If you have ever built a web page, CSS flexbox feels almost like oxygen—you type `display: flex; gap: 12px;` and boxes magically arrange themselves. Step into a native Rust GUI framework, however, and there is no browser engine sitting behind your window. Every rectangle, sidebar, chat bubble, and scroll viewport must have its exact `(x, y, width, height)` computed in Rust before a single pixel can be drawn.
+
+Understanding layout from first principles transforms GUI programming from "trial-and-error tweaking until it looks right" into deterministic geometry. In this lesson, we unpack how constraint-based box models and Taffy-style flexbox engines solve screen geometry in two clean tree passes.
+
+## Background Knowledge Map: What Mathematical & Algorithmic Ideas Drive UI Layout?
+
+Behind every modern layout engine (CSS Flexbox, Flutter's RenderBox, Rust's `taffy` crate used by GPUI and Dioxus) lie four clean engineering concepts:
+
+1. **The Box Model & Coordinate Geometry**:
+   Every UI node is an axis-aligned rectangle defined by `(origin_x, origin_y, width, height)` in logical pixels (device-independent points scaled by HiDPI scale factor, e.g., $2\times$ on Retina displays). Inside that box sit concentric layers: **margin** (outer spacing), **border**, **padding** (inner spacing), and the **content box** where children or text live.
+
+2. **Two-Pass Tree Layout (Constraints Down, Sizes Up)**:
+   Layout engines avoid slow iterative constraint solvers by performing two linear $O(N)$ tree traversals:
+   - **Pass 1 (Measure / Constraints Down → Preferred Sizes Up)**: Each parent passes an `AvailableSpace` constraint (`Definite(px)`, `MinContent`, `MaxContent`) down to its children; each child reports back its intrinsic or desired `(width, height)`.
+   - **Pass 2 (Arrange / Final Positions Down)**: Knowing all children's sizes, the parent distributes leftover space (`flex_grow`), shrinks overflowing items (`flex_shrink`), aligns them along the cross axis, and assigns every child its final `(x, y)` coordinates.
+
+3. **Main Axis vs. Cross Axis & Flex Distribution**:
+   Flexbox abstracts horizontal (`flex_row`) and vertical (`flex_col`) layouts into one unified algorithm using a **main axis** (direction items flow) and a **cross axis** (perpendicular direction). Free space along the main axis is allocated proportionally to each child's `flex_grow` weight, while `gap` reserves fixed gutters strictly *between* adjacent siblings (never on the outer edges).
+
+4. **Text Shaping as a Coupled Constraint**:
+   Unlike a fixed $40 \times 40$ icon, wrapped text has a **height that depends on its width**: narrow the chat bubble and the text wraps onto more lines, growing taller. Layout engines therefore pass the resolved width into a text shaper (like Cosmic-Text / CoreText / HarfBuzz) during the measure pass to compute the exact line-wrapped height.
 
 ## 60-minute teaching plan
 
@@ -407,6 +427,54 @@ div()
 `.absolute()` removes the element from flex layout — it doesn't affect the size or position of siblings.
 
 ---
+
+### Deep-Dive Explanation: Hand-Computing a 2-Pass Flexbox Layout to the Exact Pixel (Read Slowly)
+
+Instead of treating flexbox as a black box, let us run the exact algorithm by hand on a realistic desktop chat window header/body row and verify every single `(x, y, width, height)` coordinate!
+
+Suppose we have a horizontal flex container (`flex_row`) representing a 3-pane desktop app (left sidebar, main chat pane, right inspector):
+- **Parent container**: `width = 800px`, `height = 600px`, `padding = 20px` on all 4 sides, `gap = 10px` between children.
+- **3 children**:
+  - **Child A (Sidebar)**: fixed `width = 160px`, `flex_grow = 0`, `flex_shrink = 0`.
+  - **Child B (Main Chat)**: `flex_basis = 0px`, `flex_grow = 2`.
+  - **Child C (Inspector)**: `flex_basis = 0px`, `flex_grow = 1`.
+
+#### Step 1: Compute the Parent's Inner Content Box
+
+Subtract left and right padding from the parent's outer width (and top/bottom padding from outer height):
+$$W_{\text{inner}} = 800 - (20 + 20) = 760\text{ px}, \qquad H_{\text{inner}} = 600 - (20 + 20) = 560\text{ px}.$$
+The inner content origin starts at $(x_0, y_0) = (20, 20)$.
+
+#### Step 2: Subtract Fixed Gutters (`gap`) and Base Sizes
+
+With $n = 3$ children, there are $n - 1 = 2$ gaps between adjacent items:
+$$W_{\text{gaps}} = (3 - 1) \times 10 = 20\text{ px}.$$
+Sum the base (`flex_basis`) widths of all children:
+$$W_{\text{base}} = 160 + 0 + 0 = 160\text{ px}.$$
+Now compute the remaining free space available for `flex_grow`:
+$$W_{\text{free}} = W_{\text{inner}} - W_{\text{gaps}} - W_{\text{base}} = 760 - 20 - 160 = 580\text{ px}.$$
+
+#### Step 3: Distribute Free Space Proportionally to `flex_grow`
+
+Total growth weight is $G = 0 + 2 + 1 = 3$. Each child $i$ receives:
+$$\Delta w_i = W_{\text{free}} \times \frac{\text{flex\_grow}_i}{G}.$$
+- **Child A**: $w_A = 160 + 580 \times \frac{0}{3} = 160\text{ px}$.
+- **Child B**: $w_B = 0 + 580 \times \frac{2}{3} = 386.67\text{ px} \xrightarrow{\text{pixel rounding}} 387\text{ px}$.
+- **Child C**: $w_C = 0 + 580 \times \frac{1}{3} = 193.33\text{ px} \xrightarrow{\text{pixel rounding}} 193\text{ px}$.
+
+Quick sanity check: $160 + 387 + 193 + 20\text{ (gaps)} = 760\text{ px} = W_{\text{inner}}$! Exact to the pixel.
+
+#### Step 4: Assign Final `(x, y, width, height)` Boxes (Cross-Axis `stretch`)
+
+With default cross-axis alignment `items_stretch`, every child stretches to $H_{\text{inner}} = 560\text{ px}$ starting at $y = 20$:
+
+| Pane | Formula for `x` | Final `(x, y)` | Final `(width, height)` | Right Edge (`x + width`) |
+| :--- | :--- | :---: | :---: | :---: |
+| **Child A (Sidebar)** | $x_0 = 20$ | `(20, 20)` | `(160, 560)` | `180` |
+| **Child B (Main Chat)** | $180 + 10\text{ (gap)} = 190$ | `(190, 20)` | `(387, 560)` | `577` |
+| **Child C (Inspector)** | $577 + 10\text{ (gap)} = 587$ | `(587, 20)` | `(193, 560)` | `780` |
+
+Verify the right margin: $800 - 780 = 20\text{ px}$ (exact right padding!). Now you can also see **why `min_w_0()` is mandatory in flex layouts**: if Child B contains a long unwrapped URL whose intrinsic `min-content` width is `500px`, the engine clamps $w_B \ge 500\text{ px}$ unless you set `min_w(px(0.0))`—causing Child C to overflow off the right edge of the 800 px window!
 
 ## Code walkthrough: naive → idiomatic layout
 

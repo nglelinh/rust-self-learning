@@ -10,7 +10,22 @@ categories:
 lesson_type: required
 ---
 
-Not all failures are equal. Some are recoverable (invalid user input), and others indicate a bug (an invariant was violated). This lesson teaches where panics belong, how to keep invariants local, and how to design APIs that fail predictably.
+After learning `Result<T, E>`, many Rust learners swing too far in one direction—either sprinkling `.unwrap()` everywhere (turning user typos into crashes) or wrapping even impossible internal bugs in awkward `Result` chains. The secret to idiomatic Rust error handling is knowing the crisp boundary between two worlds: **expected external failures** (bad user input, missing files, dropped sockets $$	o$$ `Result`) versus **broken programmer invariants** (bugs that should never happen if your code is correct $$	o$$ `panic!` / `assert!`).
+
+This lecture sharpens that exact engineering judgment: when `unwrap()` is a liability, how `expect("why this holds")` documents invariants, and how `assert!` differs from `debug_assert!` in `--release` builds.
+
+---
+
+## Background Knowledge Map: Recoverable Errors vs. Unrecoverable Panics
+
+Four systems principles define the boundary between `Result` and `panic!` in Rust:
+
+1. **External Boundary vs. Internal Invariant:** Never trust input crossing a process boundary (CLI args, network bytes, files)—always return `Result`. Inside trusted code, if a mathematical invariant is violated (e.g., an internal queue length disagrees with its backing buffer), failing fast via `panic!` prevents silent data corruption.
+2. **What `panic!` Actually Does (Unwind vs. Abort):** By default, a panic **unwinds** the stack cleanly, running every `Drop` destructor on the way up so files close and locks release (unlike a C segfault!). In embedded or size-constrained binaries (`panic = "abort"`), it terminates immediately.
+3. **`expect()` as an Executable Proof Comment:** Never write `.expect("failed")`—write `.expect("regex literal is verified at compile time")`, stating *why* the `None`/`Err` case is believed impossible.
+4. **Release-Build Semantics of `assert!` vs. `debug_assert!`:** `assert!` stays active in both `debug` and `--release` builds (protecting safety-critical invariants); `debug_assert!` is **completely stripped out** in `--release` builds (ideal for expensive O(n) sanity checks during testing).
+
+---
 
 ## 60-minute teaching plan
 
@@ -189,6 +204,42 @@ fn parse_wrong_arity() {
 1. Panicking on user input.
 2. Using `assert!` for input validation (turns user mistakes into crashes).
 3. Returning `bool` instead of a structured error.
+
+---
+
+### Worked Line-by-Line Trace (Debug vs. Release & Boundary Discipline): External `Result` + Internal `assert!`
+
+Trace how a parser separates untrusted input (`Result`) from internal invariants (`assert!` / `debug_assert!`):
+
+```rust
+fn split_kv(line: &str) -> Result<(&str, &str), &'static str> {
+    let (k, v) = line.split_once('=').ok_or("missing '='")?; // External input -> Result!
+    let k = k.trim();
+    if k.is_empty() {
+        return Err("empty key");                             // External input -> Result!
+    }
+    debug_assert!(line.contains('=')); // Checked in `cargo test`, ZERO cost in `--release`!
+    assert!(!k.is_empty());            // Always active: guards downstream invariant!
+    Ok((k, v.trim()))
+}
+```
+
+| Input `line` | Build Profile | External Check (`Result`) | `debug_assert!` | `assert!` | Outcome |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `"host=localhost"` | `debug` | Passes | Runs & passes | Runs & passes | `Ok(("host", "localhost"))` |
+| `"host=localhost"` | `--release` | Passes | **Compiled away (0 ns)** | Runs & passes | `Ok(("host", "localhost"))` |
+| `"bad_line"` | Both | Returns `Err("missing '='")` | Never reached | Never reached | Clean `Err` (no crash!) |
+
+### Deep-Dive Explanation: Four Rules for Choosing Between `Result`, `expect`, and `assert!` (Read Slowly)
+
+1. **Never `.unwrap()` untrusted input in library or server code:** A single malformed HTTP header calling `.unwrap()` can crash an entire worker thread (Denial-of-Service vulnerability).
+2. **Use `.expect("reason")` only when *you* can prove the invariant:** For example, parsing a hard-coded constant IP `"127.0.0.1".parse::<IpAddr>().expect("valid static IP")` is completely idiomatic because no runtime input can break it.
+3. **Never put side effects inside `debug_assert!`:** Writing `debug_assert!(list.pop().is_some())` creates a nightmare Heisenbug—the `.pop()` runs in `debug` tests and vanishes in `--release`!
+4. **Test panic invariants explicitly with `#[should_panic]`:** When an internal function documents a panic contract (like out-of-bounds indexing), verify it in unit tests with `#[should_panic(expected = "...")]`.
+
+**Quick check.** Suppose a function runs an expensive O(n) check verifying that a slice is sorted before binary search. Should you write that check with `assert!` or `debug_assert!`—and what happens to it when you build with `cargo build --release`?
+
+---
 
 ## Exercises
 
