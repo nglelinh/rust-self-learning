@@ -16,7 +16,7 @@ This lesson shifts from locks (`Arc<Mutex<T>>`) to **message-passing concurrency
 
 ---
 
-## Background Knowledge Map: Message Passing, Backpressure & Protocols
+## Key ideas: Message Passing, Backpressure & Protocols
 
 ### 1. Ownership Transfer Over Channels (`mpsc` / Bounded Queues)
 A channel pairs a **Sender (`tx`)** and **Receiver (`rx`)** around a synchronized FIFO queue. Sending a value `T: Send` transfers ownership—so a 10 MB `Vec<u8>` moves across threads by copying only its **24-byte stack header**, never its heap bytes!
@@ -401,7 +401,7 @@ Trace a fast producer (10 ms/job) feeding a slow consumer (100 ms/job) through `
 - `t = 100 ms`: Consumer pops `J1` → buffer `[J2]` (len 1/2) → Producer wakes up and pushes `J3`!
 Memory stays capped at **2 jobs** forever instead of growing to gigabytes!
 
-### Deep-Dive Explanation: Designing Clean Message-Passing Architectures (Read Slowly)
+### Explanation: Designing Clean Message-Passing Architectures
 
 #### Step 1: Model messages as a crisp `enum`, not raw strings or tuples
 Instead of sending `(u32, String)` and remembering magic codes, define `enum Command { Process(Job), Flush(oneshot::Sender<()>), Shutdown }`. Rust’s exhaustive `match` guarantees workers handle every protocol state.

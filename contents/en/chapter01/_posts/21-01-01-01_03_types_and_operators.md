@@ -16,7 +16,7 @@ This lecture maps Rust’s primitive numeric types (`i8`–`i128`, `u8`–`u128`
 
 ---
 
-## Background Knowledge Map: Bit-Exact Types and Overflow Semantics in Rust
+## Key ideas: Bit-Exact Types and Overflow Semantics in Rust
 
 Four systems-level guarantees underpin every arithmetic expression in Rust:
 
@@ -278,7 +278,7 @@ let c5 = u8::try_from(300_i32); // Err(...) (SAFE: forces you to handle out-of-r
 | `300_i32 as u8` | `44` | `u8` | Hazardous—silently drops high bits |
 | `u8::try_from(300_i32)` | `Err(...)` | `Result<u8, ...>` | Safe—checked at runtime |
 
-### Deep-Dive Explanation: Four Rules for Bulletproof Numeric Code (Read Slowly)
+### Explanation: Four Rules for Bulletproof Numeric Code
 
 1. **Replace narrowing `as` casts with `TryFrom`:** Writing `(-1_i32) as u32` silently produces `4_294_967_295` with zero compiler error. `u32::try_from(x)` turns that silent corruption into a recoverable `Result`.
 2. **Never test floating-point equality with `==` after arithmetic:** In IEEE 754 binary64, `0.1 + 0.2 == 0.30000000000000004`. Compare `(a - b).abs() < 1e-9` instead.

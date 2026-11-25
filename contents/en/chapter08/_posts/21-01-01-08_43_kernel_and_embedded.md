@@ -14,7 +14,7 @@ What happens when you strip away Linux, macOS, Windows, the allocator, the file 
 
 Remarkably, **almost everything that makes Rust great survives intact**: ownership, borrowing, zero-cost generics, traits, enums, and fearless concurrency—all packaged in the tiny, dependency-free `core` crate. That is why Rust became the first new language ever accepted alongside C in the Linux kernel and is rapidly reshaping firmware engineering.
 
-## Background Knowledge Map: What Changes When You Leave `std` Behind for Bare Metal?
+## Key ideas: What Changes When You Leave `std` Behind for Bare Metal?
 
 Writing `#![no_std]` Rust for kernels and microcontrollers rests on four core architectural pillars:
 
@@ -258,7 +258,7 @@ async fn main(spawner: Spawner) {
 
 Embassy implements cooperative multitasking with zero-cost async state machines — no heap allocation per task.
 
-### Deep-Dive Explanation: Hand-Tracing a Volatile MMIO GPIO Register Toggle (Read Slowly)
+### Explanation: Hand-Tracing a Volatile MMIO GPIO Register Toggle
 
 Let us trace down to the exact bit level what happens inside an STM32 ARM Cortex-M microcontroller when your `#![no_std]` Rust firmware turns on an onboard LED wired to **GPIO Port A, Pin 5 (`PA5`)**—and why omitting `volatile` breaks the hardware.
 

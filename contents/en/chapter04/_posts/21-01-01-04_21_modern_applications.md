@@ -16,7 +16,7 @@ This optional capstone connects Chapter 4’s ownership primitives to 2022–202
 
 ---
 
-## Background Knowledge Map: Ownership Architecture in Production Runtimes
+## Key ideas: Ownership Architecture in Production Runtimes
 
 ### 1. `'static` Bounds & Shared Ownership in Async Runtimes (Tokio)
 When you call `tokio::spawn(async move { ... })`, the spawned task may outlive the stack frame that spawned it and migrate across worker threads. Therefore, Tokio requires `Future + Send + 'static`—meaning **no borrowed stack references**! Real services share immutable config or connection pools via `Arc<State>` rather than fighting impossible lifetimes.
@@ -223,7 +223,7 @@ Compare reading 1,000,000 lines from a file:
    - Call 1: clears internal `self.buf`, reads line 1 into `self.buf`, returns `Some(&'a str)` borrowing `&'a mut self`.
    - Call 2: borrow checker **forbids** calling `.next()` again until the previous `&'a str` is no longer used! Once dropped, `self.buf` is overwritten in place with line 2. **Allocations: 1 total!**
 
-### Deep-Dive Explanation: Choosing an Ownership Architecture for Real Systems (Read Slowly)
+### Explanation: Choosing an Ownership Architecture for Real Systems
 
 #### Step 1: Never fight `'static` across `tokio::spawn`—wrap shared state in `Arc`
 If a task needs access to a database pool, router, or config, clone an `Arc` handle (`let db = Arc::clone(&state.db);`) and `move` it into the `async` block. One atomic increment costs ~5 nanoseconds and keeps your entire architecture lifetime-free.

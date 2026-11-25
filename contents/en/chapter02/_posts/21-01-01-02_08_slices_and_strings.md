@@ -16,7 +16,7 @@ This lecture reveals the clean memory layout behind Rust’s **slices (`&[T]` an
 
 ---
 
-## Background Knowledge Map: Fat Pointers, Deref Coercion, and UTF-8 Invariants
+## Key ideas: Fat Pointers, Deref Coercion, and UTF-8 Invariants
 
 Four systems concepts unlock slices and strings permanently:
 
@@ -234,7 +234,7 @@ fn main() {
 | `s.len()` | — | — | `7` (always **bytes**, O(1)) |
 | `s.chars().count()` | — | — | `3` (scans UTF-8 codepoints, O(n)) |
 
-### Deep-Dive Explanation: Four Rules for Slices and Strings in Real Rust (Read Slowly)
+### Explanation: Four Rules for Slices and Strings in Real Rust
 
 1. **Accept `&str` and `&[T]` in function parameters, not `&String` or `&Vec<T>`:** A function taking `&str` accepts string literals (`"hi"`), full `&String`s, and sub-slices (`&s[1..3]`) seamlessly—zero extra allocations.
 2. **Return owned `String` / `Vec<T>` when creating new data:** You can only return `&str` if it borrows from an input parameter or is `'static`; if your function constructs brand-new text, return `String`.

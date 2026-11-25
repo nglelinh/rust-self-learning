@@ -16,7 +16,7 @@ This lecture demystifies Rust’s code organization: the exact boundary between 
 
 ---
 
-## Background Knowledge Map: Package, Crate, Module, and Visibility in Rust
+## Key ideas: Package, Crate, Module, and Visibility in Rust
 
 Four architectural rules keep even 100,000-line Rust codebases crystal clear:
 
@@ -293,7 +293,7 @@ Trace which calls compile from each scope:
 | Inside `src/lib.rs` | Compiles (`math::add`) | **Error E0603** | `helper` is private inside `math` |
 | Inside `src/main.rs` | Compiles (`calc_app::add`) | **Error E0603** | `main.rs` is a **separate crate**—only sees `lib.rs`’s `pub` API! |
 
-### Deep-Dive Explanation: Four Module Habits That Prevent Link & Visibility Headaches (Read Slowly)
+### Explanation: Four Module Habits That Prevent Link & Visibility Headaches
 
 1. **Never declare `mod math;` in *both* `src/lib.rs` and `src/main.rs`:** Doing so compiles `math.rs` twice into two unrelated crates—producing baffling errors where `calc_app::math::Config` and `crate::math::Config` are incompatible types! Mount it once in `lib.rs` and import it via `calc_app::...` in `main.rs`.
 2. **Use `pub use` to design a clean public facade:** Re-export key types at the crate root so users write `calc_app::add` instead of memorising deep internal paths.

@@ -16,7 +16,7 @@ Default Rust ownership is a strict monarchy: every value has **one** owner, and 
 
 ---
 
-## Background Knowledge Map: Memory Ownership Strategies in Systems Programming
+## Key ideas: Memory Ownership Strategies in Systems Programming
 
 ### 1. Stack Indirection & Recursive Types (`Box<T>`)
 Stack frames must have compile-time known sizes (`Sized`). Wrapping a recursive child in `Box<T>` replaces an unbounded inline struct with an **8-byte heap pointer**—making recursive ASTs, linked structures, and trait objects (`Box<dyn Trait>`) compile with zero reference-counting overhead.
@@ -424,7 +424,7 @@ Notice the two-stage teardown: the payload `T` is dropped the instant `strong ==
 | `Rc<u64>` | **8 bytes** | **16 bytes** (`strong: usize`, `weak: usize`) + 8 bytes `u64` | **No (`!Send + !Sync`)** |
 | `Arc<u64>` | **8 bytes** | **16 bytes** (`AtomicUsize` strong & weak) + 8 bytes `u64` | **Yes** (when `T: Send + Sync`) |
 
-### Deep-Dive Explanation: Picking the Right Smart Pointer Without Over-Engineering (Read Slowly)
+### Explanation: Picking the Right Smart Pointer Without Over-Engineering
 
 #### Step 1: Start with plain values and references (`T`, `&T`, `&mut T`)
 Never reach for `Box` or `Rc` by habit from Java/C++. Plain stack ownership and borrowed slices have zero heap overhead and the cleanest compiler checks.

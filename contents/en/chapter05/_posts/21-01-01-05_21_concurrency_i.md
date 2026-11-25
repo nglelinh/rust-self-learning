@@ -16,7 +16,7 @@ Yet Rust is honest about what a type system *cannot* prevent: **deadlocks** and 
 
 ---
 
-## Background Knowledge Map: Hardware Concurrency & Rust’s Type Guarantees
+## Key ideas: Hardware Concurrency & Rust’s Type Guarantees
 
 ### 1. Memory Models & Data Races
 A **data race** occurs when two threads access the same memory address concurrently, at least one access is a write, and there is no synchronization ordering them. Because modern CPUs reorder instructions and hold stale values in L1/L2 caches, data races cause torn reads and memory corruption. Rust prevents them statically by forbidding unsynchronized shared mutable state.
@@ -471,7 +471,7 @@ Suppose Thread 1 and Thread 2 both need `lock_a` and `lock_b`:
 
 Notice there is **zero memory corruption** and **zero data race**—every access is locked! That is why Rust’s type system allows it to compile. **Fix:** enforce a global **lock ordering** (always lock `lock_a` *before* `lock_b`), or combine both fields into a single `Mutex<CombinedState>`.
 
-### Deep-Dive Explanation: Writing Fast, Deadlock-Free Shared-State Rust (Read Slowly)
+### Explanation: Writing Fast, Deadlock-Free Shared-State Rust
 
 #### Step 1: Prefer `std::thread::scope` when threads only borrow local stack data
 Classic `std::thread::spawn` demands `'static`, forcing `Arc` even for short parallel loops. `std::thread::scope` guarantees all scoped threads join before the scope exits—letting worker threads borrow plain `&slice` directly from your stack with **zero `Arc` overhead**!

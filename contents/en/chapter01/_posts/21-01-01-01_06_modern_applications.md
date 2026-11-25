@@ -16,7 +16,7 @@ This optional bridge connects Chapter 1’s fundamentals to four production real
 
 ---
 
-## Background Knowledge Map: Four Systems Designs Behind Modern Rust Tooling
+## Key ideas: Four Systems Designs Behind Modern Rust Tooling
 
 Every tool you run in Chapter 1 embodies a clean computer-science architecture:
 
@@ -258,7 +258,7 @@ legacy_math = "1.2"         # Declares edition = "2021" -> LINKS SEAMLESSLY!
 | **Front-End Parsing** | `legacy_math` parsed under 2021 rules; `analytics_core` under 2024 | Identical—both lower to the same unified MIR / LLVM IR |
 | **Back-End Codegen** | Emits native x86_64/ARM64 binary calling OS syscalls | Emits sandboxed `.wasm` bytecode (no direct `std::fs` access) |
 
-### Deep-Dive Explanation: Four Production Tooling Takeaways (Read Slowly)
+### Explanation: Four Production Tooling Takeaways
 
 1. **Protocol design beats micro-optimization:** Switching Cargo’s registry access from full Git clones to sparse HTTP lookups solved CI cold-start latency permanently.
 2. **Never treat `rust-analyzer` as a substitute for `cargo check`:** Because IDE analysis optimizes for speed on incomplete code, always gate pull requests with `cargo check`, `cargo test`, and `cargo clippy`.

@@ -16,7 +16,7 @@ Bài học này đặt nền móng cho toàn bộ chuỗi công cụ Rust: phân
 
 ---
 
-## Bản đồ kiến thức nền: Kiến trúc chuỗi công cụ và quy trình biên dịch Rust
+## Kiến thức cần nhớ: Kiến trúc chuỗi công cụ và quy trình biên dịch Rust
 
 Để làm chủ môi trường phát triển Rust ở tầm kỹ sư hệ thống, hãy hình dung bốn lớp công cụ xếp chồng lên nhau:
 
@@ -272,7 +272,7 @@ Giả sử bạn có dự án `hello_cargo` với một hàm cộng đơn giản
 
 Quan sát cột cuối cùng! Sự khác biệt giữa `debug` và `release` không chỉ là tốc độ chạy (thường chênh nhau **10–100 lần**), mà còn thay đổi hành vi kiểm tra tràn số lúc chạy — đó là lý do khi đo hiệu năng (benchmark) bạn **luôn** phải dùng `--release`.
 
-### Khung giải thích: Bốn kỷ luật về chuỗi công cụ mọi lập trình viên Rust cần nhớ (nên đọc chậm)
+### Giải thích: Bốn kỷ luật về chuỗi công cụ mọi lập trình viên Rust cần nhớ
 
 1. **Tách rõ `Cargo.toml` (ý định) và `Cargo.lock` (thực tế đã khóa):** `Cargo.toml` khai báo dải phiên bản cho phép (ví dụ `rand = "0.8"`), còn `Cargo.lock` ghi chính xác phiên bản và mã băm SHA-256 của từng gói phụ thuộc. Với ứng dụng binary, **luôn commit `Cargo.lock`** để đảm bảo bản dựng tái lập 100%.
 2. **Dùng `cargo check` trong vòng lặp sửa lỗi:** Khi đang sửa lỗi kiểu hoặc borrow checker, `cargo check` chạy nhanh gấp nhiều lần `cargo build` vì bỏ qua bước sinh mã máy LLVM nặng nề.

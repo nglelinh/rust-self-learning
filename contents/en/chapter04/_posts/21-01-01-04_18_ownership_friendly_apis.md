@@ -16,7 +16,7 @@ Great Rust APIs feel almost effortless to call because their signatures encode *
 
 ---
 
-## Background Knowledge Map: Ownership as an API Design Language
+## Key ideas: Ownership as an API Design Language
 
 Three design principles separate clunky beginner signatures from idiomatic Rust libraries.
 
@@ -451,7 +451,7 @@ Consider `fn sanitize(input: &str) -> Cow<'_, str>` that replaces spaces with `'
 - **Call 2:** `sanitize("hello world")` — sees `' '` → allocates `"hello_world".to_string()` and returns **`Cow::Owned(String)`**. **Heap allocations: 1 (only when needed!).**
 - Both callers simply read `&*out` (via `Deref<Target = str>`) without even caring which variant came back!
 
-### Deep-Dive Explanation: A 4-Step Decision Framework for Any Rust Function Signature (Read Slowly)
+### Explanation: A 4-Step Decision Framework for Any Rust Function Signature
 
 #### Step 1: Ask what the function *does* with each input
 - **Read-only?** Take `&str`, `&[T]`, or `&Path` (never `&String` or `&Vec<T>`).

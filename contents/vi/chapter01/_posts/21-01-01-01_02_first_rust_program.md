@@ -16,7 +16,7 @@ Bài học này dẫn bạn qua chương trình Rust đầu tiên, phân biệt 
 
 ---
 
-## Bản đồ kiến thức nền: Bất biến mặc định, Shadowing và Hệ thống định dạng trong Rust
+## Kiến thức cần nhớ: Bất biến mặc định, Shadowing và Hệ thống định dạng trong Rust
 
 Dưới lớp cú pháp đơn giản của bài học đầu tiên là ba nguyên lý thiết kế ngôn ngữ rất sâu sắc:
 
@@ -257,7 +257,7 @@ fn main() {
 | Dòng 6 | `raw` (lần 2) | `&str` | Tạo binding mới bất biến trỏ lát cắt `"42"` |
 | Dòng 7 | `raw` (lần 3) | `i32` | Tạo binding mới 4 byte chứa số `42`; tên cũ bị che khuất |
 
-### Khung giải thích: Bốn quy tắc vàng khi làm việc với biến và in ấn trong Rust (nên đọc chậm)
+### Giải thích: Bốn quy tắc vàng khi làm việc với biến và in ấn trong Rust
 
 1. **Mặc định dùng `let`, chỉ thêm `mut` khi thực sự cần biến đổi:** Nếu bạn lỡ viết `let mut x = 5;` mà không bao giờ sửa `x`, trình biên dịch `rustc` sẽ nhắc nhẹ bằng cảnh báo *unused `mut`* để giữ mã luôn sạch.
 2. **Dùng shadowing cho chuỗi biến đổi kiểu dữ liệu:** Thay vì đặt tên rườm rà kiểu `input_str`, `input_trimmed`, `input_num`, shadowing cho phép giữ một tên duy nhất và khóa tính bất biến sau khi chuyển đổi xong.

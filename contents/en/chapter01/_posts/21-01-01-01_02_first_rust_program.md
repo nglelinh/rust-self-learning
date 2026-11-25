@@ -16,7 +16,7 @@ This lecture walks through your first real Rust program and draws a razor-sharp 
 
 ---
 
-## Background Knowledge Map: Immutability, Shadowing, and Compile-Time Formatting
+## Key ideas: Immutability, Shadowing, and Compile-Time Formatting
 
 Beneath the clean syntax of a twenty-line Rust program sit three deliberate systems-programming design choices:
 
@@ -257,7 +257,7 @@ fn main() {
 | Line 6 | `raw` (2nd) | `&str` | Creates a **new** immutable binding `(ptr', 2)` hiding the old one |
 | Line 7 | `raw` (3rd) | `i32` | Creates a **new** 4-byte integer binding `42`—type changed cleanly |
 
-### Deep-Dive Explanation: Four Everyday Rules for Bindings and Output (Read Slowly)
+### Explanation: Four Everyday Rules for Bindings and Output
 
 1. **Start with `let`; add `mut` only when mutation is genuinely needed:** If you mark a variable `mut` and never mutate it, `rustc` warns you immediately so your code never lies about its intent.
 2. **Use shadowing for data-cleaning pipelines:** Turning raw text into a trimmed slice and then into a parsed integer under one name avoids cluttered names like `input_str` / `input_num` and leaves the parsed value safely immutable.

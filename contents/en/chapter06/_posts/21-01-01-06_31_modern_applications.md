@@ -14,7 +14,7 @@ Chapter 6 introduced the sharpest power tools in the Rust toolbox: declarative a
 
 In production Rust infrastructure, those "escape hatches" *are* the product. From `serde` and `sqlx` generating zero-cost parsers at compile time, to `PyO3` accelerating Python data pipelines by $10\times$–$100\times$, to `Miri` catching subtle aliasing violations before they ever reach a CPU, this lesson shows how modern teams wield Chapter 6 primitives safely at scale.
 
-## Background Knowledge Map: Where Macros, `unsafe`, and Formal Checking Meet in Industry
+## Key ideas: Where Macros, `unsafe`, and Formal Checking Meet in Industry
 
 Modern Rust ecosystems rely on four interlocking technical pillars from Chapter 6:
 
@@ -99,7 +99,7 @@ The `unsafe` is inside PyO3. Your module is the safe facade. That is the only FF
 
 `serde`’s derive, `tokio::select!`, `thiserror`, and rustc’s own `fluent` diagnostics are proc macros or `macro_rules!`. They expand before type checking. A 2024–2026 production bug class is “the macro expanded to something that only fails on a rare cfg.” `trybuild` and `macrotest` are how library authors snapshot that expansion — Chapter 6 testing applied to the compiler frontend.
 
-### Deep-Dive Explanation: Hand-Tracing a Stacked Borrows Violation That Miri Catches (Read Slowly)
+### Explanation: Hand-Tracing a Stacked Borrows Violation That Miri Catches
 
 One of the most common `unsafe` surprises for systems programmers coming from C is that **creating a reference can invalidate an earlier raw pointer—even if you never write through the reference**. Let us trace the exact borrow stack step by step as Miri executes the following 6-line snippet:
 

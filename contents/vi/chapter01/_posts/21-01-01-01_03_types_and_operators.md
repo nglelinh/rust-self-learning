@@ -16,7 +16,7 @@ Bài học này trang bị cho bạn bản đồ đầy đủ các kiểu dữ l
 
 ---
 
-## Bản đồ kiến thức nền: Hệ thống kiểu tĩnh nghiêm ngặt và biểu diễn bit trong Rust
+## Kiến thức cần nhớ: Hệ thống kiểu tĩnh nghiêm ngặt và biểu diễn bit trong Rust
 
 Để làm chủ kiểu dữ liệu trong lập trình hệ thống, hãy nắm chắc bốn trụ cột sau:
 
@@ -274,7 +274,7 @@ let c5 = u8::try_from(300_i32); // Err(...) (AN TOÀN: buộc bạn xử lý l�
 | `300_i32 as u8` | `44` | `u8` | Rủi ro — âm thầm mất dữ liệu! |
 | `u8::try_from(300_i32)` | `Err(...)` | `Result<u8, ...>` | An toàn — bắt lỗi lúc chạy |
 
-### Khung giải thích: Bốn nguyên tắc vàng về kiểu dữ liệu và toán tử (nên đọc chậm)
+### Giải thích: Bốn nguyên tắc vàng về kiểu dữ liệu và toán tử
 
 1. **Ưu tiên `TryFrom` thay cho `as` khi thu hẹp kiểu:** `as` không bao giờ báo lỗi dù bạn ép `-1i32 as u32` (biến thành `4_294_967_295`!). Dùng `u32::try_from(x)` giúp chặn đứng lỗi dấu ngay tức thì.
 2. **Đừng bao giờ so sánh bằng trực tiếp hai số thực `f64` sau phép tính:** Trong chuẩn IEEE 754, `0.1 + 0.2` bằng `0.30000000000000004`, không bằng `0.3`. Hãy luôn so sánh độ lệch tuyệt đối `(a - b).abs() < 1e-9`.

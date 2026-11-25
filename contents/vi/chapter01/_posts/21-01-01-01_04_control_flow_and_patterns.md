@@ -16,7 +16,7 @@ Bài học này giúp bạn tư duy theo phong cách biểu thức (expression-o
 
 ---
 
-## Bản đồ kiến thức nền: Tư duy biểu thức và Đối khớp mẫu toàn diện trong Rust
+## Kiến thức cần nhớ: Tư duy biểu thức và Đối khớp mẫu toàn diện trong Rust
 
 Bốn nguyên lý sau phân biệt luồng điều khiển trong Rust với các ngôn ngữ mệnh lệnh truyền thống:
 
@@ -321,9 +321,9 @@ Truy vết 3 đầu vào cụ thể đi qua các nhánh theo đúng thứ tự t
 | `(-4, None)` | Sai (vì `None` $$
 eq$$ `Some`) | Sai | Khớp `x=-4 < 0` **Đúng** | `"âm và thiếu y"` |
 
-*Lưu ý sống còn về dấu chấm phẩy:* Nếu ở dòng cuối của hàm bạn vô tình thêm `;` sau dấu `}` của `match`, biểu thức `match` biến thành **câu lệnh (statement)** có kiểu unit `()` — lập tức gây lỗi biên dịch vì không khớp kiểu trả về `&'static str`!
+*Lưu ý quan trọng về dấu chấm phẩy:* Nếu ở dòng cuối của hàm bạn vô tình thêm `;` sau dấu `}` của `match`, biểu thức `match` biến thành **câu lệnh (statement)** có kiểu unit `()` — lập tức gây lỗi biên dịch vì không khớp kiểu trả về `&'static str`!
 
-### Khung giải thích: Bốn thói quen viết luồng điều khiển sạch chuẩn Rust (nên đọc chậm)
+### Giải thích: Bốn thói quen viết luồng điều khiển sạch chuẩn Rust
 
 1. **Dùng biểu thức để giảm biến `mut`:** Thay vì khai báo `let mut label = ""; if ... { label = ... }`, hãy gán thẳng `let label = match ... { ... };`. Mã ngắn hơn và đảm bảo biến không bao giờ bị quên khởi tạo.
 2. **Cẩn thận khi dùng nhánh bắt tất cả `_ =>`:** Với `enum` do chính bạn định nghĩa, hạn chế dùng `_ =>` nếu có thể — liệt kê tường minh từng biến thể giúp trình biên dịch tự động nhắc bạn mỗi khi hệ thống mở rộng thêm trạng thái mới.

@@ -16,7 +16,7 @@ This optional production bridge translates Chapter 2’s concepts—Ownership, B
 
 ---
 
-## Background Knowledge Map: How Chapter 2 Primitives Map to Production Systems Security
+## Key ideas: How Chapter 2 Primitives Map to Production Systems Security
 
 Three real-world engineering forces drive Rust’s adoption in kernels, browsers, and cloud infrastructure:
 
@@ -217,7 +217,7 @@ fn main() {
 | Calling `buf.clear()` while `hdr` is live | Compiles; dangling read (use-after-free CVE!) | **Rejected at compile time (`E0502`)** |
 | Extra heap copies for `hdr` | 0 bytes | **0 bytes** (same C-level zero-copy speed!) |
 
-### Deep-Dive Explanation: Four Lessons From Production Rust Adoption (Read Slowly)
+### Explanation: Four Lessons From Production Rust Adoption
 
 1. **Ownership is a security boundary, not a style preference:** Every borrow-checker rule corresponds directly to a concrete CVE class that costs organizations millions in patches and incident response.
 2. **Zero-copy performance and safety reinforce each other:** You don’t have to `.clone()` every network packet to satisfy the borrow checker—borrowing `&[u8]` slices achieves C-level throughput with compile-time lifetime proofs.

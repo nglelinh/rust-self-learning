@@ -16,7 +16,7 @@ Bài học này gỡ rối hoàn toàn hệ thống tổ chức mã của Rust: 
 
 ---
 
-## Bản đồ kiến thức nền: Kiến trúc phân tầng Package – Crate – Module trong Rust
+## Kiến thức cần nhớ: Kiến trúc phân tầng Package – Crate – Module trong Rust
 
 Nắm vững bốn quy tắc sau sẽ giúp bạn tổ chức dự án Rust hàng chục nghìn dòng mà không bao giờ lạc đường:
 
@@ -293,7 +293,7 @@ Truy vết đường đi và quyền nhìn thấy (visibility) từ từng vị 
 | Bên trong `src/lib.rs` | Hợp lệ (`math::add`) | **Lỗi E0603** | `helper` là private bên trong `math` |
 | Bên trong `src/main.rs` | Hợp lệ (`calc_app::add`) | **Lỗi E0603** | `main.rs` là **crate riêng** — chỉ thấy API `pub` của `lib.rs`! |
 
-### Khung giải thích: Bốn nguyên tắc tổ chức mã chuẩn công nghiệp trong Rust (nên đọc chậm)
+### Giải thích: Bốn nguyên tắc tổ chức mã chuẩn công nghiệp trong Rust
 
 1. **Đừng bao giờ khai báo `mod math;` ở cả `lib.rs` lẫn `main.rs`:** Làm vậy sẽ buộc trình biên dịch biên dịch tệp `math.rs` thành **hai module tách biệt** thuộc hai crate khác nhau (gây lỗi kiểu trùng tên nhưng khác danh tính!). Chỉ khai báo `mod math;` ở `lib.rs`, còn `main.rs` gọi qua `use calc_app::...`.
 2. **Dùng `pub use` để thiết kế mặt tiền API gọn gàng (Re-exporting):** Thay vì bắt người dùng gõ `my_crate::internal::parser::v2::parse`, hãy `pub use internal::parser::v2::parse;` ngay ở gốc `lib.rs`.

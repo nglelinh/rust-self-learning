@@ -16,7 +16,7 @@ Rust’s golden rule—*many shared references (`&T`) OR one exclusive mutable r
 
 ---
 
-## Background Knowledge Map: Compile-Time vs. Runtime Aliasing Enforcement
+## Key ideas: Compile-Time vs. Runtime Aliasing Enforcement
 
 ### 1. Shared XOR Mutable & `UnsafeCell<T>`
 LLVM assumes that memory behind a plain `&T` never mutates while borrowed—enabling aggressive register caching. **`UnsafeCell<T>`** is the *sole* primitive in Rust that tells the compiler “bytes inside here may change through `&self`.” Every interior-mutability type (`Cell`, `RefCell`, `Mutex`, `RwLock`, `AtomicUsize`) is built directly on top of `UnsafeCell<T>`.
@@ -523,7 +523,7 @@ Trace this sequence line by line:
 | `cache: HashMap<String, Vec<u8>>` (single-threaded) | **`RefCell<HashMap<...>>`** | 1 `isize` counter | Yes (if overlapping borrows) | No |
 | `cache: HashMap<String, Vec<u8>>` (multi-threaded) | **`Mutex<HashMap<...>>`** (or `RwLock`) | OS/futex lock | Poisoning on thread panic | **Yes (`Sync`)** |
 
-### Deep-Dive Explanation: Keeping `RefCell` Safe and Panic-Free (Read Slowly)
+### Explanation: Keeping `RefCell` Safe and Panic-Free
 
 #### Step 1: Never hold a `Ref` or `RefMut` across a callback or recursive call
 Almost every real-world `RefCell` panic comes from borrowing `self.state.borrow_mut()` and then calling another method `self.notify()` that *also* calls `self.state.borrow()`! Always clone the tiny piece of data you need, drop the guard in a tight `{ ... }` block, and *then* invoke callbacks.

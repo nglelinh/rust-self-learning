@@ -16,7 +16,7 @@ This opening lecture builds your mental model of the Rust toolchain: how `rustup
 
 ---
 
-## Background Knowledge Map: The Four Layers of the Rust Toolchain
+## Key ideas: The Four Layers of the Rust Toolchain
 
 For a university graduate coming from C/C++, Java, or Python, Rust’s tooling is easiest to understand as four cleanly separated engineering layers:
 
@@ -272,7 +272,7 @@ Run three everyday Cargo commands on the same project and trace exactly which co
 
 Look closely at that last column: `--release` does not merely make your program **10–100× faster**—it also disables debug overflow checks, which is why benchmarks *must* run in `--release` and why overflow-sensitive code should use explicit `checked_*` or `saturating_*` methods.
 
-### Deep-Dive Explanation: Four Toolchain Habits That Pay Off Immediately (Read Slowly)
+### Explanation: Four Toolchain Habits That Pay Off Immediately
 
 1. **Separate intent (`Cargo.toml`) from exact reproducibility (`Cargo.lock`):** Commit `Cargo.lock` for binary applications so every deployment builds the exact same dependency graph; libraries typically leave it uncommitted so downstream callers can unify versions.
 2. **Live inside `cargo check` during edit–compile loops:** Skipping LLVM machine-code generation cuts iteration time dramatically while still giving you 100% of `rustc`’s type and borrow-checker diagnostics.

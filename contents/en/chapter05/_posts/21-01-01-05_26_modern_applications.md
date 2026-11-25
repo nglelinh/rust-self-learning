@@ -16,7 +16,7 @@ This optional capstone follows Chapter 5’s building blocks—Tokio tasks, boun
 
 ---
 
-## Background Knowledge Map: Production Async Rust Infrastructure (2022–2026)
+## Key ideas: Production Async Rust Infrastructure (2022–2026)
 
 ### 1. Multi-Threaded Work-Stealing Proxies (Cloudflare Pingora)
 Classic NGINX spawns isolated OS worker processes that cannot easily share connection pools across cores. **Pingora** runs a single multi-threaded **Tokio** process with work-stealing scheduling and lock-free/shared `Arc` connection pools—improving upstream connection reuse while eliminating C buffer overflows by construction.
@@ -209,7 +209,7 @@ Compare holding **50,000 idle TLS/HTTP connections** on a 16-core server:
 - **1 OS thread per connection** (2 MB default stack): `50,000 × 2 MB = 100 GB RAM` just in stack reservations + massive kernel scheduler thrashing.
 - **Async Rust (Tokio + `hyper`)** (~4 KB per task + 16 worker threads): `50,000 × 4 KB ≈ 200 MB RAM` (**500× less memory!**) + zero kernel thread-context switches between tasks on the same core!
 
-### Deep-Dive Explanation: How Production Async Rust Stays Fast Under Load (Read Slowly)
+### Explanation: How Production Async Rust Stays Fast Under Load
 
 #### Step 1: Bound concurrency at the front door (`tower::limit::ConcurrencyLimit` / `Semaphore`)
 Accepting unlimited concurrent requests turns a brief downstream slowdown into an OOM crash. Always place a hard concurrency cap and load-shedding timeout at the outermost middleware layer.

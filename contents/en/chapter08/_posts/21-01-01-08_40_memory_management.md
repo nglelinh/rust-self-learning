@@ -14,7 +14,7 @@ When you write `Box::new(42)` or `Vec::with_capacity(1024)` in Rust, it feels ef
 
 In this lesson, we pull back the curtain beneath `Box<T>` and `Vec<T>`—exploring virtual-to-physical paging, stack guard pages, how global allocators (`jemalloc`, `mimalloc`, `glibc malloc`) work, and how to plug in your own `#[global_allocator]`.
 
-## Background Knowledge Map: How Does Memory Travel From Silicon DRAM to a Rust `Box<T>`?
+## Key ideas: How Does Memory Travel From Silicon DRAM to a Rust `Box<T>`?
 
 Memory management in a systems language spans four stacked layers—from CPU hardware all the way up to Rust's `GlobalAlloc` trait:
 
@@ -276,7 +276,7 @@ std::thread::Builder::new()
 
 Prefer heap allocation (`Vec`, `Box`) over large stack arrays for anything beyond a few KiB.
 
-### Deep-Dive Explanation: Hand-Walking a 48-Bit x86-64 Virtual Address and a Bump Allocator's Alignment Math (Read Slowly)
+### Explanation: Hand-Walking a 48-Bit x86-64 Virtual Address and a Bump Allocator's Alignment Math
 
 Let us trace two concrete calculations by hand: how the CPU hardware splits a Rust pointer into page-table indices, and how a custom bump allocator aligns a pointer without wasting or misaligning bytes.
 

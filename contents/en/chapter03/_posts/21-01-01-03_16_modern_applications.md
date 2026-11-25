@@ -16,7 +16,7 @@ This optional capstone shows how Chapter 3’s abstractions scale to production 
 
 ---
 
-## Background Knowledge Map: Production Rust’s Three Chapter-3 Pillars
+## Key ideas: Production Rust’s Three Chapter-3 Pillars
 
 ### 1. Structured vs. Erased Error Handling (`thiserror` vs. `anyhow`)
 Libraries need **structured error enums** (`thiserror`) so callers can `match` on specific failure variants without losing type information. Applications (CLIs, servers) mostly log, attach human context, and bubble errors up—where **type-erased error containers** (`anyhow::Error`) shine by storing any `std::error::Error + Send + Sync + 'static` behind a slim single-word pointer.
@@ -233,7 +233,7 @@ Compare calling an async trait method `store.get(id).await` 1,000,000 times/seco
 | `#[async_trait]` macro | `Pin<Box<dyn Future<Output = ...> + Send>>` | **1,000,000 heap allocs** | Yes ✓ |
 | Native `async fn` in trait (1.75+) | Concrete opaque `impl Future<Output = ...>` | **0 heap allocs!** | Not directly (needs wrapper/erasure) |
 
-### Deep-Dive Explanation: Designing Chapter-3 Boundaries for Real Production Code (Read Slowly)
+### Explanation: Designing Chapter-3 Boundaries for Real Production Code
 
 #### Step 1: Split libraries (`thiserror`) from binaries (`anyhow`) on day one
 If external callers might branch on *why* something failed (retry on timeout, abort on invalid auth), define a `#[derive(thiserror::Error)]` enum. In your `main.rs` binary or CLI, wrap errors with `anyhow::Context` (`.with_context(|| format!("reading {}", path.display()))?`) so operators get crisp error chains instead of bare `"No such file or directory"`.

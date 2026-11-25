@@ -14,7 +14,7 @@ For decades, the most unforgiving corners of software engineering—operating-sy
 
 Between 2022 and 2026, that monopoly broke. Rust drivers now ship in mainline **Linux** and **Windows** kernels, **Android** cut memory-safety vulnerabilities in new native code by over half after adopting Rust, **AWS Firecracker** powers serverless isolation, and **Ferrocene** became the first Rust toolchain qualified for ISO 26262 ASIL D (automotive) and IEC 61508 SIL 4 (industrial safety). This closing lesson connects everything in Chapter 8 to the real-world systems running in production today.
 
-## Background Knowledge Map: What Engineering Requirements Govern Kernel, Cloud, and Safety-Critical Rust?
+## Key ideas: What Engineering Requirements Govern Kernel, Cloud, and Safety-Critical Rust?
 
 Deploying Rust in kernels, embedded devices, and certified safety systems requires mastering four real-world constraints:
 
@@ -87,7 +87,7 @@ Ferrocene is rustc plus a quality-management story: language specification, test
 
 WASI 0.2 (25 January 2024) gives clocks, random, filesystem, sockets, CLI, HTTP as WIT worlds. Wasmtime implements them in Rust. A guest process has fds and a clock without `int 0x80` on your laptop. Firecracker (AWS, Rust since 2018, still the production MicroVM for Lambda/Fargate-style isolation through 2026) is the heavier cousin: a real Linux guest, a tiny VMM. Both are Chapter 8 “what is a process” answers for the cloud.
 
-### Deep-Dive Explanation: Comparing a Static `heapless::Vec<u8, 64>` Budget vs. Heap `Vec<u8>` Under Hard Real-Time Constraints (Read Slowly)
+### Explanation: Comparing a Static `heapless::Vec<u8, 64>` Budget vs. Heap `Vec<u8>` Under Hard Real-Time Constraints
 
 Why do automotive and aerospace Rust teams ban `alloc::vec::Vec` in flight-control loops and reach for `heapless::Vec<T, N>` instead? Let us compare their exact memory layout, worst-case latency, and failure modes on a real sensor telemetry packet (`64` bytes max, running on a $100\text{ MHz}$ MCU with a strict $100\,\mu\text{s}$ control-loop deadline).
 

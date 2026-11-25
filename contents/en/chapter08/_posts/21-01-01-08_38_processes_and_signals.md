@@ -14,7 +14,7 @@ Every time you hit Enter in a terminal, launch a compiler, or run a web server b
 
 In Chapter 8, we step below application frameworks directly into the **Unix systems programming** layer. This lesson unpacks how processes are created, how asynchronous **signals** (`SIGTERM`, `SIGKILL`, `SIGINT`) interrupt running programs, and how Rust's `std::process::Command` turns fragile C `fork`/`exec` boilerplate into clean, leak-free supervision code.
 
-## Background Knowledge Map: How Does the Kernel Manage Process Lifecycles?
+## Key ideas: How Does the Kernel Manage Process Lifecycles?
 
 To build reliable CLIs, build tools, shells, and daemons in Rust, you need four foundational Unix process concepts:
 
@@ -240,7 +240,7 @@ fn run_with_retry(cmd: &str, args: &[&str], retries: u32) -> ExitStatus {
 
 On Unix, use `ExitStatus::code()` (returns `Option<i32>` — `None` if killed by signal) and `std::os::unix::process::ExitStatusExt::signal()` to distinguish normal exit from signal termination.
 
-### Deep-Dive Explanation: Hand-Decoding Unix `waitpid` Exit Statuses and Tracing a Zombie Process (Read Slowly)
+### Explanation: Hand-Decoding Unix `waitpid` Exit Statuses and Tracing a Zombie Process
 
 When a child process finishes on Linux/macOS, `waitpid()` returns a single raw 32-bit integer `wstatus` (whose low 16 bits carry the full termination report). Let us decode two concrete values bit by bit by hand so you understand exactly what Rust's `ExitStatus` is inspecting under the hood.
 

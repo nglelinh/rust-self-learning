@@ -14,7 +14,7 @@ For years, skeptics argued that Rust was great for CLIs, databases, and WebAssem
 
 This lesson looks past framework tutorials to examine the *engineering architectures* that let these production Rust desktop products ship across macOS, Linux, and Windows.
 
-## Background Knowledge Map: What Systems Innovations Power Production Rust Desktop Apps?
+## Key ideas: What Systems Innovations Power Production Rust Desktop Apps?
 
 Modern Rust desktop products outperform legacy stacks because they rethink four classic bottlenecks:
 
@@ -80,7 +80,7 @@ COSMIC: compositor + applets as Rust processes, iced widgets, Unix desktop conve
 
 Tauri’s marketing (and a lot of 2024 blog posts) is installer size. Zed’s marketing is frame time. COSMIC’s marketing is a Linux desktop that is not a C++ museum. All three are honest if you pick the matching product.
 
-### Deep-Dive Explanation: Sizing a GPU Glyph Atlas and Instanced Draw Buffer for a 10,000-Character Screen (Read Slowly)
+### Explanation: Sizing a GPU Glyph Atlas and Instanced Draw Buffer for a 10,000-Character Screen
 
 Why can a GPU-accelerated Rust editor or terminal (like Zed or Alacritty) redraw an entire 4K screen full of syntax-highlighted code in under $1\text{ ms}$? Let us compute the exact GPU memory footprint and PCIe/memory bandwidth by hand.
 

@@ -14,7 +14,7 @@ If you have ever built a web page, CSS flexbox feels almost like oxygen—you ty
 
 Understanding layout from first principles transforms GUI programming from "trial-and-error tweaking until it looks right" into deterministic geometry. In this lesson, we unpack how constraint-based box models and Taffy-style flexbox engines solve screen geometry in two clean tree passes.
 
-## Background Knowledge Map: What Mathematical & Algorithmic Ideas Drive UI Layout?
+## Key ideas: What Mathematical & Algorithmic Ideas Drive UI Layout?
 
 Behind every modern layout engine (CSS Flexbox, Flutter's RenderBox, Rust's `taffy` crate used by GPUI and Dioxus) lie four clean engineering concepts:
 
@@ -428,7 +428,7 @@ div()
 
 ---
 
-### Deep-Dive Explanation: Hand-Computing a 2-Pass Flexbox Layout to the Exact Pixel (Read Slowly)
+### Explanation: Hand-Computing a 2-Pass Flexbox Layout to the Exact Pixel
 
 Instead of treating flexbox as a black box, let us run the exact algorithm by hand on a realistic desktop chat window header/body row and verify every single `(x, y, width, height)` coordinate!
 

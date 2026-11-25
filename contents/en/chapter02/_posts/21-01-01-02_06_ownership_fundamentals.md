@@ -16,7 +16,7 @@ Rust breaks that binary trade-off with a single, radical invention: **Ownership*
 
 ---
 
-## Background Knowledge Map: Stack, Heap, and Compile-Time Resource Management
+## Key ideas: Stack, Heap, and Compile-Time Resource Management
 
 Understanding Ownership becomes effortless once you ground it in four computer-architecture fundamentals:
 
@@ -208,7 +208,7 @@ fn main() {
 | `let s3 = s2.clone();` (**Clone**) | `s2: (0x100, 2, 2)`, `s3: (0x200, 2, 2)` | `0x100: "hi"`, `0x200: "hi"` | `x`, `y`, `s2`, `s3` |
 | End of `main()` | Stack popped | Both freed **once each** | None |
 
-### Deep-Dive Explanation: Why Ownership Eliminates Whole Classes of Bugs at Zero Cost (Read Slowly)
+### Explanation: Why Ownership Eliminates Whole Classes of Bugs at Zero Cost
 
 1. **Moves are cheap (just stack-header copies):** Moving a 100 MB `Vec<u8>` into a function copies only its 24-byte `(ptr, len, cap)` header—never the 100 MB buffer on the heap!
 2. **Double-free becomes unrepresentable:** Because `s1` is statically invalidated the instant `s2 = s1` executes, it is impossible for both `s1` and `s2` to run `drop()` on `0x100`.

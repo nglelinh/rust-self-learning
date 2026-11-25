@@ -16,7 +16,7 @@ This lecture maps Rust’s three workhorse standard collections (`Vec<T>`, `Hash
 
 ---
 
-## Background Knowledge Map: Memory Complexity, Ownership in Loops, and Zero-Cost Iterators
+## Key ideas: Memory Complexity, Ownership in Loops, and Zero-Cost Iterators
 
 Four systems fundamentals govern collections and iteration in Rust:
 
@@ -254,7 +254,7 @@ fn main() {
 | `for w in &mut words` | `(&mut words).into_iter()` (`iter_mut`) | `&mut String` | 0 | **Yes** (elements mutated) |
 | `for w in words` | `words.into_iter()` | `String` (owned!) | 0 (moves into `counts`!) | **No** (consumed!) |
 
-### Deep-Dive Explanation: Four Performance & Idiom Habits for Rust Collections (Read Slowly)
+### Explanation: Four Performance & Idiom Habits for Rust Collections
 
 1. **Default to `&v` in `for` loops unless you intentionally want to consume `v`:** Forgetting `&` in `for x in v` is one of the most common causes of unexpected `E0382` move errors for beginners.
 2. **Use `entry()` for frequency counters and caches:** Writing `*counts.entry(k).or_insert(0) += 1;` performs a single hash lookup and cleanly avoids holding a simultaneous `&` and `&mut` borrow on the map.

@@ -14,7 +14,7 @@ Every systems language eventually runs into the same sobering reality: the world
 
 **Foreign Function Interface (FFI)** is the bridge across that cliff. In this lesson, we strip away the mystery of calling C from Rust (and exposing Rust to C) so you can design thin, audited `unsafe` boundaries that hand your callers a 100% safe, idiomatic Rust API.
 
-## Background Knowledge Map: What Is FFI and What Systems Layers Does It Touch?
+## Key ideas: What Is FFI and What Systems Layers Does It Touch?
 
 To cross a language boundary without corrupting memory or triggering undefined behavior, you are really coordinating four distinct layers of the systems stack:
 
@@ -330,7 +330,7 @@ Most real FFI crates (like `libz-sys`, `openssl-sys`) use bindgen to generate th
 
 ---
 
-### Deep-Dive Explanation: Byte-Level Struct Layout and `CStr` Memory Traces (Read Slowly)
+### Explanation: Byte-Level Struct Layout and `CStr` Memory Traces
 
 Before writing a single `extern "C"` block, let us trace by hand how two seemingly identical structs occupy completely different bytes in memory—and why a single missing `#[repr(C)]` or NUL byte turns a clean call into garbage data.
 

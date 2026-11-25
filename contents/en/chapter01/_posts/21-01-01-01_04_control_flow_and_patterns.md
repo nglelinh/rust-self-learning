@@ -16,7 +16,7 @@ This lecture teaches Rust’s expression-oriented style: replacing mutable scrat
 
 ---
 
-## Background Knowledge Map: Expression-Oriented Control Flow & Exhaustive Matching
+## Key ideas: Expression-Oriented Control Flow & Exhaustive Matching
 
 Four design principles elevate Rust’s control flow far beyond traditional `if`/`switch` statements:
 
@@ -321,7 +321,7 @@ eq$$ `Some`) | Pattern mismatch | Binds `x=-4 < 0` -> **True** | `"neg & none"` 
 
 *Watch the semicolon:* Adding a `;` right after the closing `}` of `match` turns the expression into a **statement** returning the unit type `()`—which immediately triggers a compile-time return-type mismatch against `&'static str`.
 
-### Deep-Dive Explanation: Four Habits for Clean Rust Control Flow (Read Slowly)
+### Explanation: Four Habits for Clean Rust Control Flow
 
 1. **Use expression assignment to eliminate `mut` boilerplate:** Prefer `let msg = match code { ... };` over declaring `let mut msg = "";` and mutating it inside branches.
 2. **Avoid blind `_ =>` wildcards on your own enums:** Listing every variant explicitly harnesses the compiler as a refactoring safety net whenever new variants appear.

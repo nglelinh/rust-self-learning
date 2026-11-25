@@ -14,7 +14,7 @@ Every safe Rust abstraction we have used so far—`File::open`, `TcpStream::conn
 
 In this lesson, we peel away the layers between `std` and the kernel: raw `libc` bindings, safe POSIX wrappers in the `nix` crate, `errno` translation, and watching every syscall live with `strace`.
 
-## Background Knowledge Map: What Layers Sit Between Rust Code and the OS Kernel?
+## Key ideas: What Layers Sit Between Rust Code and the OS Kernel?
 
 Understanding the syscall stack lets you debug production issues with `strace` and call OS features that `std` does not yet wrap:
 
@@ -256,7 +256,7 @@ Reading `strace` output is one of the most effective ways to understand what you
 - Debug permission errors (look for `EACCES` or `EPERM` returns).
 - Understand why a program hangs (look for blocking `futex` or `read` calls).
 
-### Deep-Dive Explanation: Tracing `write(1, "hi\n", 3)` Through CPU Registers, `libc`, and `nix::Result` (Read Slowly)
+### Explanation: Tracing `write(1, "hi\n", 3)` Through CPU Registers, `libc`, and `nix::Result`
 
 Let us trace a single 3-byte write to standard output—and one failed permission check—all the way from Rust down to the exact x86-64 CPU registers and back up into a safe `Result`.
 

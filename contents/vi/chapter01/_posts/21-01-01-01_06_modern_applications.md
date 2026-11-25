@@ -16,7 +16,7 @@ Bài đọc mở rộng này kết nối toàn bộ nền tảng Chương 01 v�
 
 ---
 
-## Bản đồ kiến thức nền: Bốn công nghệ sản xuất đứng sau hệ sinh thái chuỗi công cụ Rust
+## Kiến thức cần nhớ: Bốn công nghệ sản xuất đứng sau hệ sinh thái chuỗi công cụ Rust
 
 Mỗi công cụ bạn gõ hàng ngày ở Chương 01 đều giải quyết một bài toán kỹ thuật hệ thống thực thụ:
 
@@ -255,7 +255,7 @@ legacy_math = "1.2"         # Crate này khai báo edition = "2021" -> VẪN LI�
 | **Biên dịch front-end** | `legacy_math` biên dịch theo luật 2021; `analytics_core` theo luật 2024 | Y hệt — cả hai cùng hạ xuống một tầng MIR/LLVM IR thống nhất! |
 | **Sinh mã máy back-end** | Sinh lệnh x86_64/ARM64 gọi syscall hệ điều hành | Sinh bytecode `.wasm` chạy trong sandbox (không có `std::fs` trực tiếp) |
 
-### Khung giải thích: Bốn bài học kỹ thuật hệ thống rút ra từ chuỗi công cụ Rust (nên đọc chậm)
+### Giải thích: Bốn bài học kỹ thuật hệ thống rút ra từ chuỗi công cụ Rust
 
 1. **Thiết kế giao thức dữ liệu quyết định tốc độ hạ tầng:** Chuyển từ Git index sang Sparse HTTP index là ví dụ kinh điển cho thấy thay đổi cấu trúc truy cập ($$O(	ext{toàn bộ hệ sinh thái}) 	o O(	ext{số gói phụ thuộc})$$) quan trọng hơn mọi tối ưu vi mô.
 2. **Đừng kỳ vọng IDE (`rust-analyzer`) thay thế hoàn toàn `cargo check`:** Do phải ưu tiên độ trễ thấp lúc gõ, đôi khi `rust-analyzer` bỏ qua một số kiểm tra borrow checker sâu — luôn chốt bằng `cargo check` / `cargo test` trên CI.

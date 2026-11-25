@@ -16,7 +16,7 @@ This lecture explores how structs lay out data contiguously in memory, how `impl
 
 ---
 
-## Background Knowledge Map: Data Layout, Method Receivers, and Type-Driven Invariants
+## Key ideas: Data Layout, Method Receivers, and Type-Driven Invariants
 
 Four core ideas connect Rust structs directly to systems engineering and clean API design:
 
@@ -237,7 +237,7 @@ fn main() {
 | `p.bump()` | `&mut self` | Temporary exclusive borrow; `8080` $$	o$$ `8081` | **Yes** |
 | `p.into_u16()` | `self` (by value) | Moves `p` into method and consumes it | **No** (if `Port` is not `Copy`) |
 
-### Deep-Dive Explanation: Four Rules for Designing Idiomatic Rust Structs (Read Slowly)
+### Explanation: Four Rules for Designing Idiomatic Rust Structs
 
 1. **Validate at the boundary, trust inside the core:** Once `Port::new` returns `Ok(p)`, no internal function taking `Port` ever needs `if port == 0` checks again.
 2. **Default to `&self`; escalate to `&mut self` or `self` deliberately:** Taking `self` by value is a superpower for *typestate* APIs (e.g., `Connection::close(self)` makes calling `conn.send()` after closing a compile-time error!).

@@ -16,7 +16,7 @@ The moment you put a reference inside a `struct`, however, lifetimes become part
 
 ---
 
-## Background Knowledge Map: Zero-Copy Views & Memory Ownership in Structs
+## Key ideas: Zero-Copy Views & Memory Ownership in Structs
 
 Three systems-programming principles explain every rule of borrowed structs.
 
@@ -462,7 +462,7 @@ impl GoodDoc {
 ```
 `GoodDoc` has **zero lifetime parameters**, moves freely across functions and threads, and still gives zero-copy `&str` access on demand!
 
-### Deep-Dive Explanation: Designing Clean Borrowed Structs Without Lifetime Hell (Read Slowly)
+### Explanation: Designing Clean Borrowed Structs Without Lifetime Hell
 
 #### Step 1: Read `struct View<'a>` as “`View` is tied to an external owner alive for `'a`”
 A lifetime parameter on a struct is a neon warning sign: *this struct does not own its data*. Keep borrowed structs short-lived—typically inside a parsing loop, request handler, or single function call.

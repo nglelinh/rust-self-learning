@@ -14,7 +14,7 @@ Open your activity monitor right now and look at how much RAM a modern desktop c
 
 Rust offers a different path: native binaries that start in milliseconds, use a fraction of the memory, and talk directly to the GPU. Yet Rust's GUI landscape can feel bewildering at first because ownership and borrow-checking collide head-on with traditional object-oriented UI trees. This lesson maps the major Rust GUI architectures and explains why GPUI—the engine behind the Zed editor—strikes such a compelling balance.
 
-## Background Knowledge Map: How Do Desktop GUI Engines Actually Draw Pixels?
+## Key ideas: How Do Desktop GUI Engines Actually Draw Pixels?
 
 Before comparing frameworks (`egui`, `iced`, `Tauri`, `Slint`, `GPUI`), it helps to understand the four architectural axes that separate every GUI engine on earth:
 
@@ -144,7 +144,7 @@ You write immediate-mode style, but the runtime diffs the element tree and submi
 
 > **Maturity note**: The standalone `gpui` crate is still being stabilized. APIs may change between versions. macOS is the most polished platform; Linux and Windows are available but less mature.
 
-### Deep-Dive Explanation: The 120 FPS Frame-Budget Math — Browser DOM vs. GPU-Batched UI (Read Slowly)
+### Explanation: The 120 FPS Frame-Budget Math — Browser DOM vs. GPU-Batched UI
 
 Why does a Rust GPU-accelerated editor like Zed feel noticeably snappier than an Electron app on the exact same laptop? Let us do the exact millisecond arithmetic by hand.
 

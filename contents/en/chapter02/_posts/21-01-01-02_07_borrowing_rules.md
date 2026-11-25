@@ -16,7 +16,7 @@ Rust’s **borrow checker** prevents that entire bug class—along with multi-th
 
 ---
 
-## Background Knowledge Map: Aliasing XOR Mutability (The Heart of Rust)
+## Key ideas: Aliasing XOR Mutability (The Heart of Rust)
 
 Every borrow-checker error you will ever encounter traces back to one foundational invariant:
 
@@ -282,7 +282,7 @@ Now see what happens if you move `println!("first = {first}");` **below** `v.pus
 | `v.push(40);` | Needs `&mut v` while `first` is STILL needed later! | Would free `0x300` and move to `0x500`! | **REJECTED (`E0502`)**—prevents dangling pointer! |
 | `println!("{first}");` | Would dereference freed `0x300`! | Freed memory | Never reaches runtime! |
 
-### Deep-Dive Explanation: Reading Borrow-Checker Errors Without Guessing (Read Slowly)
+### Explanation: Reading Borrow-Checker Errors Without Guessing
 
 1. **Draw two vertical brackets in your margin:** One bracket from where `&v` starts to its *last use*; a second bracket for `&mut v`. If those two brackets overlap on any line, `rustc` will reject the code with `E0502`.
 2. **Remember *why* the compiler rejected it:** In our `Vec` trace, `v.push(40)` really *could* free `0x300` and leave `first` pointing at garbage! The borrow checker isn’t being pedantic—it just saved you from a real memory-corruption bug.

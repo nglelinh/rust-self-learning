@@ -16,7 +16,7 @@ This lecture unlocks Rust’s richest modeling tool: enums that carry per-varian
 
 ---
 
-## Background Knowledge Map: Algebraic Data Types, Tagged Unions, and Zero-Cost Safety
+## Key ideas: Algebraic Data Types, Tagged Unions, and Zero-Cost Safety
 
 Four computer-science ideas explain why Rust’s `enum` is far more powerful than C/Java enums:
 
@@ -242,7 +242,7 @@ fn parse_and_double(raw: &str) -> Result<i32, std::num::ParseIntError> {
 | `" 21 "` | `Ok(21)` | Extracts `n = 21`, continues to `Ok(n * 2)` | `Ok(42)` |
 | `"abc"` | `Err(ParseIntError)` | Immediately returns `Err(...)` (skips `n * 2`) | `Err(ParseIntError)` |
 
-### Deep-Dive Explanation: Four Patterns for Clean Enum, `Option`, and `Result` Code (Read Slowly)
+### Explanation: Four Patterns for Clean Enum, `Option`, and `Result` Code
 
 1. **Model states as an `enum`, not a soup of booleans:** Replace `struct State { is_loading: bool, error: Option<String>, data: Option<Data> }` (which allows contradictory states like loading *and* error!) with `enum State { Loading, Failed(String), Ready(Data) }`.
 2. **Use `?` for linear happy-path code:** Chaining three fallible steps with `?` reads top-to-bottom like synchronous code while preserving exact error propagation at every step.

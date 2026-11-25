@@ -16,7 +16,7 @@ Trang lộ trình này giúp bạn định vị chính xác nhánh Tiếng Việ
 
 ---
 
-## Bản đồ kiến thức nền: Bức tranh toàn cảnh bốn trụ cột của ngôn ngữ Rust
+## Kiến thức cần nhớ: Bức tranh toàn cảnh bốn trụ cột của ngôn ngữ Rust
 
 Trước khi đi vào từng bài học, người tốt nghiệp đại học nên nhìn Rust qua bốn trụ cột kỹ thuật hệ thống liên kết chặt chẽ với nhau:
 
@@ -74,7 +74,7 @@ fn main() {
 | `let b = a;` | Bị vô hiệu hóa (*moved*) | Chủ sở hữu mới `(ptr, 4, 4)` | Giữ nguyên, **không sao chép** |
 | Kết thúc `main()` | Không làm gì | Gọi `drop(b)` | Giải phóng **đúng 1 lần** (0 double-free!) |
 
-### Khung giải thích: Cách học Rust hiệu quả nhất từ ngày đầu tiên (nên đọc chậm)
+### Giải thích: Cách học Rust hiệu quả nhất từ ngày đầu tiên
 
 1. **Đừng chiến đấu với trình biên dịch — hãy đọc thông báo lỗi của nó:** Trình biên dịch `rustc` giải thích nguyên nhân lỗi kèm gợi ý sửa chi tiết hơn hầu hết mọi ngôn ngữ khác.
 2. **Tách rõ dữ liệu nằm trên Stack và dữ liệu nằm trên Heap:** Luôn tự hỏi kích thước kiểu dữ liệu có biết trước lúc biên dịch không (Stack) hay tăng giảm động lúc chạy (Heap).

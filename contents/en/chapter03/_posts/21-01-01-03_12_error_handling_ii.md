@@ -16,7 +16,7 @@ This lecture sharpens that exact engineering judgment: when `unwrap()` is a liab
 
 ---
 
-## Background Knowledge Map: Recoverable Errors vs. Unrecoverable Panics
+## Key ideas: Recoverable Errors vs. Unrecoverable Panics
 
 Four systems principles define the boundary between `Result` and `panic!` in Rust:
 
@@ -230,7 +230,7 @@ fn split_kv(line: &str) -> Result<(&str, &str), &'static str> {
 | `"host=localhost"` | `--release` | Passes | **Compiled away (0 ns)** | Runs & passes | `Ok(("host", "localhost"))` |
 | `"bad_line"` | Both | Returns `Err("missing '='")` | Never reached | Never reached | Clean `Err` (no crash!) |
 
-### Deep-Dive Explanation: Four Rules for Choosing Between `Result`, `expect`, and `assert!` (Read Slowly)
+### Explanation: Four Rules for Choosing Between `Result`, `expect`, and `assert!`
 
 1. **Never `.unwrap()` untrusted input in library or server code:** A single malformed HTTP header calling `.unwrap()` can crash an entire worker thread (Denial-of-Service vulnerability).
 2. **Use `.expect("reason")` only when *you* can prove the invariant:** For example, parsing a hard-coded constant IP `"127.0.0.1".parse::<IpAddr>().expect("valid static IP")` is completely idiomatic because no runtime input can break it.

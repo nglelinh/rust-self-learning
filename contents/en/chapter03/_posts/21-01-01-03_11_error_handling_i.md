@@ -16,7 +16,7 @@ This lecture shows you how to design clean, structured local error enums (wrappi
 
 ---
 
-## Background Knowledge Map: Error-as-Value Architecture in Rust
+## Key ideas: Error-as-Value Architecture in Rust
 
 Four pillars separate mature Rust error handling from ad-hoc string errors:
 
@@ -259,7 +259,7 @@ fn load_port(path: &str) -> Result<u16, ConfigError> {
 | File contains `"8080
 "` | None | — | Both `?` extract `Ok` values | `Ok(8080)` |
 
-### Deep-Dive Explanation: Four Rules for Designing Maintainable Rust Errors (Read Slowly)
+### Explanation: Four Rules for Designing Maintainable Rust Errors
 
 1. **Libraries use structured enums; top-level apps can use boxed/context errors:** A library cannot guess how callers want to react to each failure, so it exposes a concrete `enum`. A CLI `main()` simply wants rich human-readable context.
 2. **Add context (like file path or line number) where the error happens:** Raw `io::Error` ("No such file or directory") doesn’t tell the user *which* file was missing—attach the path or key name in your error variant!

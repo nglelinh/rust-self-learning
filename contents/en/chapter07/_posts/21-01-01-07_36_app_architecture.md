@@ -14,7 +14,7 @@ You now know how the OS schedules threads, how TCP and WebSockets carry framed J
 
 Great desktop applications—from Zed to Figma to modern Rust terminals—converge on the exact same unifying pattern: **Unidirectional Data Flow (UDF)**. Events enter at the edge, a single authoritative state layer applies deterministic transitions, and views purely render snapshots of that state.
 
-## Background Knowledge Map: What Architectural Patterns Keep Real-Time Desktop Apps Sane?
+## Key ideas: What Architectural Patterns Keep Real-Time Desktop Apps Sane?
 
 Wiring a real-time networked UI in Rust combines four clean software-architecture pillars:
 
@@ -506,7 +506,7 @@ Any blocking on the UI thread — a lock, a file read, a network call — freeze
 
 ---
 
-### Deep-Dive Explanation: Tracing One Chat Message Across Two Runtimes and Bounded Backpressure (Read Slowly)
+### Explanation: Tracing One Chat Message Across Two Runtimes and Bounded Backpressure
 
 Let us trace the exact lifecycle—thread by thread, channel by channel, and millisecond by millisecond—when a user presses **Enter** to send `"Deploy ready!"` in a GPUI + Tokio desktop chat app.
 
